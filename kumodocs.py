@@ -47,3 +47,7 @@ def main(log_level, log_dir):
     log = driver.get_log(start=start, end=end)
     flat_log = driver.flatten_log(log)
     driver.recover_objects(log=log, flat_log=flat_log)
+
+
+if __name__ == '__main__':
+    cli()
