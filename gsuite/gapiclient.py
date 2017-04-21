@@ -46,7 +46,7 @@ class Client(object):
         credentials = storage.get()
 
         # run_flow requires a wrapped oa_tools.argparse object to handle command line arguments
-        flags = argparse.ArgumentParser(parents=[oa_tools.argparser]).parse_args()
+        flags = argparse.ArgumentParser(parents=[oa_tools.argparser])
         if credentials is None:  # or credentials.invalid:
             if self.has_client_secrets(client_secrets):
                 credentials = oa_tools.run_flow(flow, storage, flags)
