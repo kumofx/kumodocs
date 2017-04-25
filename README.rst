@@ -22,16 +22,40 @@ Installation
 ~~~~~~~~~~~~
 Requirements include:
 
+- OAuth2 client ID and client secret from https://code.google.com/apis/console/
 - Python 2.7.x
 - google-api-python-client==1.6.2 
 - click==6.7
 - virtualenv (optional) 
 
+
+1. Get a client ID and client secret
+---------------------------------
+First, Kumodocs needs an OAuth 2.0 client ID and client secret to make requests to Google's sign-in endpoints.
+
+To find your project's client ID and client secret, do the following:
+
+1. Open the Credentials_ page.
+
+.. _Credentials: https://console.developers.google.com/apis/credentials
+
+2. If you haven't done so already, create your project's OAuth 2.0 credentials by clicking Create credentials > OAuth client ID, and providing the information needed to create the credentials.  Select "Other" as the type. 
+
+3. Look for the Client ID and client secret in the OAuth 2.0 client IDs section. For details, click the client ID.
+
+4. Add the client ID and client secret to config/gdrive_config.json 
+
+2. Python Program
+----------------------
+
 The recommended method of installation is to create a virtual environment using the virtualenv python package ::
 
 $ cd kumodocs
 $ virtualenv kumodocs
-$ source kumodocs/bin/activate || kumodocs\Scripts\activate.bat (windows) 
+
+Activate the virtual environment by using source activate (linux) or running activate.bat (windows) ::
+
+$ source kumodocs/bin/activate (linux)  ||  kumodocs\Scripts\activate.bat (windows) 
 
 A new virtual environment is created, where installation will not cause changes to the path or modify existing python packages.  Installation can be completed by::
 
