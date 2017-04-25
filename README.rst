@@ -15,14 +15,14 @@ The revision log for that file is obtained and processed for the artifacts menti
 Configuration
 ~~~~~~~~~~~~~ 
 Google API requires OAuth2 authentication to access drive services.
-An app must be created and registered at https://code.google.com/apis/console/, where the client_id and 
+An app must be created and registered at Google project Credentials_ page, where the client_id and 
 client_secret can be found.  These must be added to config/gdrive_config.json
 
 Installation
 ~~~~~~~~~~~~
 Requirements include:
 
-- OAuth2 client ID and client secret from https://code.google.com/apis/console/
+- OAuth2 client ID and client secret from https://console.developers.google.com/apis/credentials
 - Python 2.7.x
 - google-api-python-client==1.6.2 
 - click==6.7
