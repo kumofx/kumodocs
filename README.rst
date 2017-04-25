@@ -39,11 +39,13 @@ To find your project's client ID and client secret, do the following:
 
 .. _Credentials: https://console.developers.google.com/apis/credentials
 
-2. If you haven't done so already, create your project's OAuth 2.0 credentials by clicking Create credentials > OAuth client ID, and providing the information needed to create the credentials.  Select "Other" as the type. 
+2. If you haven't done so already, you may need to create a new project before creating credentials.  Click create project and input any name. 
 
-3. Look for the Client ID and client secret in the OAuth 2.0 client IDs section. For details, click the client ID.
+3.  Create your project's OAuth 2.0 credentials by clicking Create credentials > OAuth client ID, and providing the information needed to create the credentials.  Select "Other" as the type. 
 
-4. Add the client ID and client secret to config/gdrive_config.json 
+4. Look for the Client ID and client secret in the OAuth 2.0 client IDs section. For details, click the client ID.
+
+5. Add the client ID and client secret to config/gdrive_config.json 
 
 2. Python Program
 ----------------------
