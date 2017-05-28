@@ -62,7 +62,7 @@ class GSuiteDriver(basedriver.BaseDriver):
         """
         self.choice = self.client.choose_file()
 
-        if self.choice.drive == 'document':
+        if self.choice.drive == 'document' or self.choice.drive == 'spreadsheet':
             from docsparser import DocsParser
             self.parser = DocsParser(self.client, self.choice)
         else:
@@ -77,7 +77,7 @@ class GSuiteDriver(basedriver.BaseDriver):
         """
         start, end = 0, 0
 
-        if self.choice.drive not in ['document', 'presentation']:
+        if self.choice.drive not in ['document', 'spreadsheet']:
             print('{} is not a supported service at this time')
             self.logger.debug('Unsupported service: {}'.format(self.choice.drive))
             raise SystemExit
