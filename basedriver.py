@@ -3,27 +3,18 @@ from abc import abstractmethod, ABCMeta, abstractproperty
 
 
 # noinspection PyClassHasNoInit
+from collections import namedtuple
+
+
 class BaseDriver(object):
     __metaclass__ = ABCMeta
 
-    class KumoObj(object):
+    class KumoObj(namedtuple('KumoObj', 'filename content')):
         """ A Kumo object retrieved from revision log sharing common properties:
-        
-        content:  content of the object
-        type:  the object's type
-        service:  service the object originated from
-        file_name:  file name the object originated from
-        start:  starting revision of the log object was recovered from
-        end:  ending revision of the log object was recovered from """
-        __slots__ = 'content', 'type', 'service', 'file_name', 'start', 'end',
-
-        def __init__(self, content, type_, service, file_name, start, end):
-            self.content = content
-            self.type = type_
-            self.service = service
-            self.file_name = file_name
-            self.start = start
-            self.end = end
+        param str filename: Type of object with extension
+        param str content:  String content suitable for writing to disk 
+        """
+        __slots__ = ()
 
     @abstractproperty
     def logger(self):
@@ -42,8 +33,9 @@ class BaseDriver(object):
     @abstractproperty
     def base_dir(self):
         """
-        Defines base directory property for recovered objects
-        :return: base_directory
+        Defines base directory property for recovered objects, with relative paths considering /kumodocs as the 
+        working directory. 
+        :return: base_directory as absolute or relative path
         :rtype: str
         """
         pass
@@ -104,20 +96,21 @@ class BaseDriver(object):
         :rtype: (int, int) 
         """
 
-    def write_object(self, kumoobj):
+    def write_object(self, kumoobj, base_path):
         """
         Writes object to disk at location specified in directory
         :param kumoobj: An object to write, containing originating service, file_name, start and end revision, 
-        as well as content and object type.   
+        as well as content and object type. 
+        :param base_path: Directory in which kumoobj will be written. 
         :return: None
         """
 
-        path_format = '{base_dir}/{service}/{file_name}/{start}-{end}/{obj_name}'
-        outfile = os.path.realpath(path_format.format(self.base_dir, kumoobj.service, kumoobj.file_name, kumoobj.start,
-                                                      kumoobj.end, kumoobj.type))
+        outfile = os.path.realpath(os.path.join(base_path, kumoobj.filename))
+        self.logger.info('Writing {} to disk'.format(kumoobj.filename))
+        self.logger.debug('Writing {} to disk at location {}'.format(kumoobj.filename, outfile))
 
         try:
             with open(outfile, 'wb') as f:
                 f.write(kumoobj.content)
         except IOError:
-            self.logger.exception('Failed to write {} object'.format(kumoobj.type))
+            self.logger.exception('Failed to write {} object'.format(kumoobj.filename))
