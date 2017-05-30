@@ -21,7 +21,7 @@ class GSuiteDriver(basedriver.BaseDriver):
     SuggestionContent = namedtuple('content', 'added, deleted')
     LOG_START_CHR = ")]}'\n"
 
-    def __init__(self, base_dir='../downloaded', delimiter='|'):
+    def __init__(self, base_dir='downloaded', delimiter='|'):
         self.client = gapiclient.Client(service='drive', scope='https://www.googleapis.com/auth/drive')
         self._logger = logging.getLogger(__name__)
         self._base_dir = base_dir
@@ -64,7 +64,7 @@ class GSuiteDriver(basedriver.BaseDriver):
 
         if self.choice.drive == 'document' or self.choice.drive == 'spreadsheet':
             from docsparser import DocsParser
-            self.parser = DocsParser(self.client, self.choice)
+            self.parser = DocsParser(self.client, self.choice, self.KumoObj)
         else:
             raise NotImplementedError('{} service not implemented'.format(self.choice.drive))
 
@@ -147,18 +147,7 @@ class GSuiteDriver(basedriver.BaseDriver):
         return flat_log
 
     def recover_objects(self, log, flat_log):
-        image_ids, drawing_ids, suggestions = self.parser.get_doc_objects(flat_log=flat_log)
-        plain_text = self.parser.get_plain_text(flat_log=flat_log)
-
-        comments = self.parser.get_comments()  # service, file_id)
-        images = self.parser.get_images(image_ids=image_ids,
-                                        get_download_ext=self.client.get_download_ext)  # , service, file_id,
-        # drive)
-        drawings = self.parser.get_drawings(drawing_ids=drawing_ids, drive='drawings',
-                                            get_download_ext=self.client.get_download_ext)
-        self.write_doc(docname=self.choice.title, plain_text=plain_text, comments=comments, images=images,
-                       drawings=drawings, start=self.choice_start, end=self.choice_end, suggestions=suggestions,
-                       log=log, flat_log=flat_log)
+        return self.parser.recover_objects(log, flat_log)
 
     # refactor for list(**args)
     def write_doc(self, docname, plain_text, comments, images, drawings, start, end, suggestions, log, flat_log):
@@ -215,6 +204,23 @@ class GSuiteDriver(basedriver.BaseDriver):
 
         print '\nFinished with output in directory', base_dir
 
+    def make_base_path(self):
+        revision_range = '{start}-{end}'.format(start=self.choice_start, end=self.choice_end)
+        if os.path.isabs(self.base_dir):
+            base_path = os.path.realpath(self.base_dir)
+        else:
+            base_path = os.path.realpath(os.path.join(KIOutils.kumo_working_directory(), self.base_dir,
+                                                      self.choice.drive, self.choice.title, revision_range))
+
+        return base_path
+
+    def write_objects(self, *objects):
+        """ Writes all objects recovered from log """
+
+        base_path = self.make_base_path()
+        KIOutils.ensure_path(base_path)
+        for obj in objects:
+            self.write_object(obj, base_path)
 
 if __name__ == '__main__':
     print('hi')
