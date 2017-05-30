@@ -44,13 +44,14 @@ class DocsParser(object):
 
     # Drawing = namedtuple('Drawing', 'd_id width height')
 
-    def __init__(self, client, choice, delimiter='|'):
+    def __init__(self, client, choice, KumoObj, delimiter='|'):
         self.log = None
         self.flat_log = None
         self.delimiter = delimiter
         self.client = client
         self.service = client.service  # api service
         self.file_choice = choice
+        self.KumoObj = KumoObj
 
         # parsers TODO: refactor to list that executes each using self.flat_log
         self.comments_parser = CommentsParser(self.service)
@@ -58,6 +59,33 @@ class DocsParser(object):
         self.image_parser = ImageParser(self.service)
         self.drawing_parser = DrawingsParser(self.service)
         self.pt_parser = PlaintextParser()
+
+    def recover_objects(self, log, flat_log):
+        """ Recovers plain text, comments, images, drawings, and suggestions from flat_log. 
+        :return: A list of recovered objects as KumoObj
+        """
+        objects = []
+        image_ids, drawing_ids, suggestions = self.get_doc_objects(flat_log=flat_log)
+
+        objects.append(self.KumoObj(filename='revision-log.txt', content=self.stringify(log)))
+        objects.append(self.KumoObj(filename='flat-log.txt', content='\n'.join(str(line) for line in flat_log)))
+        objects.append(suggestions)
+        objects.append(self.get_plain_text(flat_log=flat_log))
+        objects.append(self.get_comments())
+
+        objects.extend(self.get_images(image_ids=image_ids, get_download_ext=self.client.get_download_ext))
+        objects.extend(self.get_drawings(drawing_ids=drawing_ids, drive='drawings',
+                                         get_download_ext=self.client.get_download_ext))
+
+        return objects
+
+    def stringify(self, log):
+        """ Converts Google Docs log into a writable string """
+        string = 'chunkedSnapshot\n'
+        string += '\n'.join(str(line) for line in log['chunkedSnapshot'])
+        string += '\nchangelog\n' + '\n'.join(str(line) for line in log['changelog'])
+
+        return string
 
     def parse_log(self, c_log, flat_log):
         """parses changelog part of log"""
@@ -191,7 +219,8 @@ class DocsParser(object):
                         if suggestion:
                             suggestions[suggestion.sug_id] = self.rm_sugg_text(line_dict, suggestion)
 
-        return image_ids, drawing_ids, suggestions
+        sugg_obj = self.KumoObj(filename='suggestions.txt', content=json.dumps(suggestions, ensure_ascii=False))
+        return image_ids, drawing_ids, sugg_obj
 
     def has_drawing(self, elem_dict, drawing_ids):
         """ True if elem_dict has drawing not contained in drawing_ids already """
@@ -258,21 +287,50 @@ class DocsParser(object):
         return gsuite.Drawing(d_id, int(img_wth), int(img_ht))
 
     def get_comments(self):
+        """ 
+        Retrieves comment data using GSuite API. 
+        :return: KumoObj containing retrieved comment data
+        """
         log_msg(self, 'Retrieving comments', 'info')
-        return self.comments_parser.get_comments(self.file_choice.file_id)
+        comments = '\n'.join(str(line) for line in self.comments_parser.get_comments(self.file_choice.file_id))
+        comment_obj = self.KumoObj(filename='comments.txt', content=comments)
+        return comment_obj
 
     def get_images(self, image_ids, get_download_ext):
+        """
+        Retrives images using private API and image_ids
+        :param image_ids: Cosmo image IDs retrieved from a Google Docs log
+        :param get_download_ext: Function which retrieves the proper image extension
+        :return: List of KumoObj with image contents. 
+        """
         log_msg(self, 'Retrieving images', 'info')
-        return self.image_parser.get_images(image_ids=image_ids, file_id=self.file_choice.file_id,
-                                            drive=self.file_choice.drive, get_download_ext=get_download_ext)
+        images = self.image_parser.get_images(image_ids=image_ids, file_id=self.file_choice.file_id,
+                                              drive=self.file_choice.drive, get_download_ext=get_download_ext)
+
+        return self.create_obj_list(images, 'img')
+
+    def create_obj_list(self, objects, type):
+        obj_list = []
+        for i, obj in enumerate(objects):
+            filename = '{}{}{}'.format(type, i, obj.extension)
+            obj_list.append(self.KumoObj(filename=filename, content=obj.content))
+        return obj_list
 
     def get_drawings(self, drawing_ids, drive, get_download_ext):
         log_msg(self, 'Retrieving drawings', 'info')
-        return self.drawing_parser.get_drawings(drawing_ids=drawing_ids, drive=drive, get_download_ext=get_download_ext)
+        drawings = self.drawing_parser.get_drawings(drawing_ids=drawing_ids, drive=drive,
+                                                    get_download_ext=get_download_ext)
+        return self.create_obj_list(drawings, 'drawing')
 
     def get_plain_text(self, flat_log):
+        """
+        :param flat_log: Flattened Google Docs log
+        :return: KumoObj containing plain text 
+        """
         log_msg(self, 'Recovering plain text', 'info')
-        return self.pt_parser.get_plain_text(flat_log=flat_log)
+        plain_text = self.pt_parser.get_plain_text(flat_log=flat_log)
+        pt_obj = self.KumoObj(filename='plaintext.txt', content=plain_text.encode('utf-8'))
+        return pt_obj
 
 
 class CommentsParser(object):
@@ -318,6 +376,7 @@ class ImageParser(object):
     """ Methods to recover images from log """
 
     # TODO refactor api logic to gapiclient
+    Image = namedtuple('Image', 'content extension img_id')
 
     def __init__(self, service):
         self.service = service
@@ -335,7 +394,8 @@ class ImageParser(object):
                                       'img_id={}'.format(url, img_id), error_level='debug')
             else:
                 extension = get_download_ext(response)
-                images.append((content, extension, img_id))
+                img = self.Image(content, extension, img_id)
+                images.append(img)
 
         return images
 
@@ -364,10 +424,12 @@ class ImageParser(object):
         image_ids = set(image_ids)
         data = {}
         for i, img_id in enumerate(image_ids):
-            key = 'r' + str(i)
+            key = "r" + str(i)
             # unicode image_ids are not accepted in the request, so they must be encoded as strings
-            data[key] = ['image', {'cosmoId': img_id.encode(), 'container': file_id}]
-        request_body = urllib.urlencode({'renderOps': data}).replace('+', '')
+            data[key] = ["image", {"cosmoId": img_id.encode(), "container": file_id}]
+
+        # removes '+' character and changes single to double quotes to prevent bad request
+        request_body = urllib.urlencode({"renderOps": data}).replace('+', '').replace('%27', '%22')
         my_headers = {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'}
 
         render_url = self.form_render_url(file_id=file_id, drive=drive)
@@ -390,16 +452,18 @@ class SuggestionParser(object):
 class DrawingsParser(object):
     """ Methods to recover drawings from log """
 
+    Drawing = namedtuple('Drawing', 'content extension')
+
     def __init__(self, service):
         self.service = service
 
     def get_drawings(self, drawing_ids, drive, get_download_ext):
         """
-        Returns a list of URLs to retrieve drawings in drawing_ids
+        Returns a list Drawings corresponding to drawing_ids recovered from log
         :param drawing_ids: A list of drawing_ids retrieved from log 
         :param drive: Location of drawing resource denoted by drive, usually Drawings
         :param get_download_ext: temporary function from gapiclient
-        :return: A list of URLs to retrieve the drawings. 
+        :return: A list of Drawings with content and extension 
         """
 
         # TODO get_download_ext -> call from client
@@ -410,7 +474,7 @@ class DrawingsParser(object):
             url = gsuite.API_BASE.format(params=params, drive=drive, file_id=drawing.d_id)
             response, content = self.service._http.request(url)
             extension = get_download_ext(response)
-            drawings.append((content, extension))
+            drawings.append(self.Drawing(content, extension))
 
         return drawings
 
