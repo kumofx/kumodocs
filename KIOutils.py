@@ -38,6 +38,11 @@ init_log()
 log = logging.getLogger(__name__)
 
 
+def kumo_working_directory():
+    """ Returns base directory containing kumodocs """
+    return dir_path(__file__)
+
+
 def strip_invalid_characters(filename):
     """
     Very conservative stripping of extraneous characters in filename.  Characters and underscore allowed.
@@ -59,9 +64,6 @@ def split_title(title):
     ext_index = title.rfind('.')
     drive = title[ext_index + 1:]
     title = strip_path_extension(title[:ext_index])
-    if drive in ['drawing', 'form', 'spreadsheet']:
-        drive += 's'
-        print('drive is now', drive)
     return title, drive
 
 
