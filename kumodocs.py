@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import click
 
@@ -46,8 +47,9 @@ def main(log_level, log_dir):
     start, end = driver.prompt_rev_range()
     log = driver.get_log(start=start, end=end)
     flat_log = driver.flatten_log(log)
-    driver.recover_objects(log=log, flat_log=flat_log)
+    objects = driver.recover_objects(log=log, flat_log=flat_log)
+    driver.write_objects(*objects)
 
 
 if __name__ == '__main__':
-    cli()
+    cli(sys.argv[1:])
