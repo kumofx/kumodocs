@@ -187,6 +187,7 @@ class Client(object):
 
     @staticmethod
     def create_log_url(start, end, choice):
+        drive = gsuite.LOG_DRIVE[choice.drive]
         params = gsuite.REV_PARAMS.format(start=start, end=end)
-        log_url = gsuite.API_BASE.format(drive=choice.drive, file_id=choice.file_id, params=params)
+        log_url = gsuite.API_BASE.format(drive=drive, file_id=choice.file_id, params=params)
         return log_url
