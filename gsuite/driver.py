@@ -149,61 +149,6 @@ class GSuiteDriver(basedriver.BaseDriver):
     def recover_objects(self, log, flat_log):
         return self.parser.recover_objects(log, flat_log)
 
-    # refactor for list(**args)
-    def write_doc(self, docname, plain_text, comments, images, drawings, start, end, suggestions, log, flat_log):
-        """ Writes all document objects retrieved from the log """
-        base_dir = os.path.realpath(os.path.join(
-            KIOutils.dir_path(__file__), '..', 'downloaded', 'document', docname, '{}-{}'.format(str(start), str(end))))
-        KIOutils.ensure_path(base_dir)
-        writing_msg = 'Writing {} to disk'
-
-        self.logger.info(writing_msg.format('drawings'))
-        for i, drawing in enumerate(drawings):
-            filename = os.path.join(base_dir, 'drawing' + str(i) + drawing[1])
-            self.logger.debug('Writing drawing {} with name {}'.format(i, filename))
-            with open(filename, 'wb') as f:
-                f.write(drawing[0])
-
-        self.logger.info(writing_msg.format('images'))
-        for i, img in enumerate(images):
-            filename = os.path.join(base_dir, 'img' + str(i) + img[1])
-            self.logger.debug('Writing img {} with name {}'.format(i, filename))
-            with open(filename, 'wb') as f:
-                f.write(img[0])
-
-        filename = os.path.join(base_dir, 'plain.txt')
-        with open(filename, 'w') as f:
-            self.logger.info(writing_msg.format('plain text'))
-            f.write(plain_text.encode('utf-8'))
-
-        filename = os.path.join(base_dir, 'comments.txt')
-        with open(filename, 'w') as f:
-            self.logger.info(writing_msg.format('comments'))
-            f.write('\n'.join(str(line) for line in comments))
-
-        filename = os.path.join(base_dir, 'suggestions.txt')
-        with open(filename, 'w') as f:
-            self.logger.info(writing_msg.format('suggestions'))
-            f.write(json.dumps(suggestions, ensure_ascii=False))
-
-        filename = os.path.join(base_dir, 'revision-log.txt')
-        with open(filename, 'w') as f:
-            self.logger.info(writing_msg.format('revision log'))
-            f.write('chunkedSnapshot')
-            for line in log['chunkedSnapshot']:
-                f.write(str(line) + '\n')
-            f.write('changelog')
-            for line in log['changelog']:
-                f.write(str(line) + '\n')
-
-        filename = os.path.join(base_dir, 'flat-log.txt')
-        with open(filename, 'w') as f:
-            self.logger.info(writing_msg.format('flat log'))
-            for line in flat_log:
-                f.write(line + '\n')
-
-        print '\nFinished with output in directory', base_dir
-
     def make_base_path(self):
         revision_range = '{start}-{end}'.format(start=self.choice_start, end=self.choice_end)
         if os.path.isabs(self.base_dir):
@@ -211,7 +156,6 @@ class GSuiteDriver(basedriver.BaseDriver):
         else:
             base_path = os.path.realpath(os.path.join(KIOutils.kumo_working_directory(), self.base_dir,
                                                       self.choice.drive, self.choice.title, revision_range))
-
         return base_path
 
     def write_objects(self, *objects):
