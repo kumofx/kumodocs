@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 from collections import namedtuple
@@ -6,10 +5,7 @@ from collections import namedtuple
 import KIOutils
 import basedriver
 import gapiclient
-
-
-class InvalidLogFormat(Exception):
-    pass
+import gsuite
 
 
 class GSuiteDriver(basedriver.BaseDriver):
@@ -19,7 +15,7 @@ class GSuiteDriver(basedriver.BaseDriver):
     """
 
     SuggestionContent = namedtuple('content', 'added, deleted')
-    LOG_START_CHR = ")]}'\n"
+
 
     def __init__(self, base_dir='downloaded', delimiter='|'):
         self.client = gapiclient.Client(service='drive', scope='https://www.googleapis.com/auth/drive')
@@ -62,9 +58,13 @@ class GSuiteDriver(basedriver.BaseDriver):
         """
         self.choice = self.client.choose_file()
 
-        if self.choice.drive == 'document' or self.choice.drive == 'spreadsheet':
+        if self.choice.drive == 'document':
             from docsparser import DocsParser
             self.parser = DocsParser(self.client, self.choice, self.KumoObj)
+
+        elif self.choice.drive in gsuite.SERVICES:
+            from sheetsparser import SheetsParser
+            self.parser = SheetsParser(self.client, self.choice, self.KumoObj)
         else:
             raise NotImplementedError('{} service not implemented'.format(self.choice.drive))
 
@@ -77,7 +77,7 @@ class GSuiteDriver(basedriver.BaseDriver):
         """
         start, end = 0, 0
 
-        if self.choice.drive not in ['document', 'spreadsheet']:
+        if self.choice.drive not in gsuite.SERVICES:
             print('{} is not a supported service at this time')
             self.logger.debug('Unsupported service: {}'.format(self.choice.drive))
             raise SystemExit
@@ -124,14 +124,7 @@ class GSuiteDriver(basedriver.BaseDriver):
         :return: Native revision log
         """
 
-        log_url = self.client.create_log_url(start=start, end=end, choice=self.choice)
-        response, log = self.client.request(url=log_url)
-        if log.startswith(GSuiteDriver.LOG_START_CHR):
-            trimmed_log = log[len(GSuiteDriver.LOG_START_CHR):]
-            return json.loads(trimmed_log)
-        else:
-            raise InvalidLogFormat('Unknown starting log punctuation. Check GSuiteDriver.LOG_START_CHR and compare to '
-                                   'log')
+        return self.parser.get_log(start=start, end=end, choice=self.choice)
 
     def flatten_log(self, log):
         """Splits into snapshot and changelog, parses each, and returns flat log"""

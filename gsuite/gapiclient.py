@@ -85,7 +85,7 @@ class Client(object):
         try:
             response, content = self.service._http.request(url, **kwargs)
             if response['status'] != '200':
-                log.critical('gapiclient.request has non-200 response status, but not httperror exception')
+                log.critical('gapiclient.request has non-200 response status')
                 log.debug('response = {}'.format(response))
                 log.debug('content = {}'.format(content))
                 raise googleapiclient.errors.HttpError

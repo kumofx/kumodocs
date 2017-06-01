@@ -60,6 +60,17 @@ class DocsParser(object):
         self.drawing_parser = DrawingsParser(self.service)
         self.pt_parser = PlaintextParser()
 
+    def get_log(self, start, end, choice):
+        log_msg(self, "Retrieving revision log", "info")
+        log_url = self.client.create_log_url(start=start, end=end, choice=choice)
+        response, log = self.client.request(url=log_url)
+        if log.startswith(gsuite.LOG_START_CHR):
+            trimmed_log = log[len(gsuite.LOG_START_CHR):]
+            return json.loads(trimmed_log)
+        else:
+            log_msg(self, 'Beginning of log = {}'.format(log[:10]), 'debug')
+            raise gsuite.InvalidLogFormat('Check gsuite.LOG_START_CHR and compare to beginning of log')
+
     def recover_objects(self, log, flat_log):
         """ Recovers plain text, comments, images, drawings, and suggestions from flat_log. 
         :return: A list of recovered objects as KumoObj
