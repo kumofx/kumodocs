@@ -92,8 +92,8 @@ If packages are locally installed:
 Known Limitations and Issues
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Sheets and Forms modules are not implemented yet.
-- Slides do not support starting revisions higher than 1
+- Sheets, Slides, and Drawings retrieve only revision logs. 
+- Forms module is not implemented yet.
 
 
 Contact Information
