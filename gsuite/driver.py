@@ -88,25 +88,25 @@ class GSuiteDriver(basedriver.BaseDriver):
         else:
             print('Please choose revision range\n')
             start = self._start_rev_range(start=start)
-            end = self._end_rev_range(end=end)
+            end = self._end_rev_range(start=start, end=end)
 
         self.choice_start, self.choice_end = start, end
         return start, end
 
     def _start_rev_range(self, start):
         """ Prompts for start revision with bounds checking"""
-        while start < 1 or start >= self.choice.max_revs:
+        while start < 1 or start > self.choice.max_revs:
             try:
                 start = int(raw_input("Start from revision(max {}): ".format(self.choice.max_revs)))
-                if start < 1 or start >= self.choice.max_revs:
+                if start < 1 or start > self.choice.max_revs:
                     raise ValueError
             except ValueError:
                 print("invalid start revision choice\n")
         return start
 
-    def _end_rev_range(self, end):
+    def _end_rev_range(self, start, end):
         """ Prompts for end revision with bounds checking"""
-        while end == 0 or end > self.choice.max_revs:
+        while end < start or end > self.choice.max_revs:
             try:
                 end = int(raw_input("End at revision(max {}): ".format(self.choice.max_revs)))
                 if end == 0 or end > self.choice.max_revs:
