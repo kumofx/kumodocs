@@ -137,7 +137,7 @@ class Client(object):
         for drive_type in gsuite.SERVICES:
             while True:
                 param = {'q': gsuite.MIME_TYPE.format(drive_type),
-                         'fields': 'items(title, id)'}
+                         'fields': 'items(title, id, editable)'}
                 if page_token:
                     param['pageToken'] = page_token
 
@@ -147,7 +147,8 @@ class Client(object):
                     log.error('Failed to retrieve list of files', exc_info=True)
                     break
                 else:
-                    result[drive_type].extend(files['items'])
+                    editable_files = filter(lambda f: f['editable'], files['items'])
+                    result[drive_type].extend(editable_files)
                     page_token = files.get('nextPageToken')
                     if not page_token:
                         break
