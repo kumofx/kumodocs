@@ -1,6 +1,5 @@
 """Common methods for initializing GSuite API client and listing GSuite files. """
 
-import argparse
 import json
 import logging
 import os
@@ -45,11 +44,9 @@ class Client(object):
         storage = oa_file.Storage(tokens)
         credentials = storage.get()
 
-        # run_flow requires a wrapped oa_tools.argparse object to handle command line arguments
-        flags = argparse.ArgumentParser(parents=[oa_tools.argparser])
         if credentials is None:  # or credentials.invalid:
             if self.has_client_secrets(client_secrets):
-                credentials = oa_tools.run_flow(flow, storage, flags)
+                credentials = oa_tools.run_flow(flow, storage, flags=None)
             else:
                 raise NotImplementedError(oa_tools.message_if_missing(client_secrets))
 
@@ -137,7 +134,7 @@ class Client(object):
         for drive_type in gsuite.SERVICES:
             while True:
                 param = {'q': gsuite.MIME_TYPE.format(drive_type),
-                         'fields': 'items(title, id, editable)'}
+                         'fields': 'items(title, id, editable), nextPageToken'}
                 if page_token:
                     param['pageToken'] = page_token
 
