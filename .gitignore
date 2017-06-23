@@ -3,3 +3,5 @@
 downloaded/*
 Kumodocs.egg-info/*
 config/log*
+*bak*
+config/gdrive.dat
