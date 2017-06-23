@@ -1,0 +1,5 @@
+*.pyc
+.idea
+downloaded/*
+Kumodocs.egg-info/*
+config/log*
