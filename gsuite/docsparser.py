@@ -92,11 +92,7 @@ class DocsParser(object):
 
     def stringify(self, log):
         """ Converts Google Docs log into a writable string """
-        string = 'chunkedSnapshot\n'
-        string += '\n'.join(str(line) for line in log['chunkedSnapshot'])
-        string += '\nchangelog\n' + '\n'.join(str(line) for line in log['changelog'])
-
-        return string
+        return json.dumps(log)
 
     def parse_log(self, c_log, flat_log):
         """parses changelog part of log"""
