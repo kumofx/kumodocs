@@ -44,13 +44,12 @@ class DocsParser(object):
 
     # Drawing = namedtuple('Drawing', 'd_id width height')
 
-    def __init__(self, client, choice, KumoObj, delimiter='|'):
+    def __init__(self, client, KumoObj, delimiter='|'):
         self.log = None
         self.flat_log = None
         self.delimiter = delimiter
         self.client = client
         self.service = client.service  # api service
-        self.file_choice = choice
         self.KumoObj = KumoObj
 
         # parsers TODO: refactor to list that executes each using self.flat_log
@@ -71,7 +70,7 @@ class DocsParser(object):
             log_msg(self, 'Beginning of log = {}'.format(log[:10]), 'debug')
             raise gsuite.InvalidLogFormat('Check gsuite.LOG_START_CHR and compare to beginning of log')
 
-    def recover_objects(self, log, flat_log):
+    def recover_objects(self, log, flat_log, choice):
         """ Recovers plain text, comments, images, drawings, and suggestions from flat_log. 
         :return: A list of recovered objects as KumoObj
         """
@@ -82,9 +81,10 @@ class DocsParser(object):
         objects.append(self.KumoObj(filename='flat-log.txt', content='\n'.join(str(line) for line in flat_log)))
         objects.append(suggestions)
         objects.append(self.get_plain_text(flat_log=flat_log))
-        objects.append(self.get_comments())
+        objects.append(self.get_comments(file_choice=choice))
 
-        objects.extend(self.get_images(image_ids=image_ids, get_download_ext=self.client.get_download_ext))
+        objects.extend(self.get_images(image_ids=image_ids, get_download_ext=self.client.get_download_ext,
+                                       file_choice=choice))
         objects.extend(self.get_drawings(drawing_ids=drawing_ids, drive='drawings',
                                          get_download_ext=self.client.get_download_ext))
 
@@ -297,17 +297,17 @@ class DocsParser(object):
         d_id, img_wth, img_ht = (elem_dict[key] for key in drawing_keys)
         return gsuite.Drawing(d_id, int(img_wth), int(img_ht))
 
-    def get_comments(self):
+    def get_comments(self, file_choice):
         """ 
         Retrieves comment data using GSuite API. 
         :return: KumoObj containing retrieved comment data
         """
         log_msg(self, 'Retrieving comments', 'info')
-        comments = '\n'.join(str(line) for line in self.comments_parser.get_comments(self.file_choice.file_id))
+        comments = '\n'.join(str(line) for line in self.comments_parser.get_comments(file_choice.file_id))
         comment_obj = self.KumoObj(filename='comments.txt', content=comments)
         return comment_obj
 
-    def get_images(self, image_ids, get_download_ext):
+    def get_images(self, image_ids, get_download_ext, file_choice):
         """
         Retrives images using private API and image_ids
         :param image_ids: Cosmo image IDs retrieved from a Google Docs log
@@ -315,8 +315,8 @@ class DocsParser(object):
         :return: List of KumoObj with image contents. 
         """
         log_msg(self, 'Retrieving images', 'info')
-        images = self.image_parser.get_images(image_ids=image_ids, file_id=self.file_choice.file_id,
-                                              drive=self.file_choice.drive, get_download_ext=get_download_ext)
+        images = self.image_parser.get_images(image_ids=image_ids, file_id=file_choice.file_id,
+                                              drive=file_choice.drive, get_download_ext=get_download_ext)
 
         return self.create_obj_list(images, 'img')
 

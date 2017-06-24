@@ -23,13 +23,12 @@ def log_msg(cls, msg, error_level):
 
 
 class SheetsParser(object):
-    def __init__(self, client, choice, KumoObj, delimiter='|'):
+    def __init__(self, client, KumoObj, delimiter='|'):
         self.log = None
         self.flat_log = None
         self.delimiter = delimiter
         self.client = client
         self.service = client.service  # api service
-        self.file_choice = choice
         self.KumoObj = KumoObj
 
     def get_log(self, start, end, choice):
