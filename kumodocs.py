@@ -47,7 +47,7 @@ def main(log_level, log_dir):
     start, end = driver.prompt_rev_range()
     log = driver.get_log(start=start, end=end)
     flat_log = driver.flatten_log(log)
-    objects = driver.recover_objects(log=log, flat_log=flat_log)
+    objects = driver.recover_objects(log=log, flat_log=flat_log, choice=choice)
     driver.write_objects(*objects)
 
 

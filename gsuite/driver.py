@@ -16,7 +16,6 @@ class GSuiteDriver(basedriver.BaseDriver):
 
     SuggestionContent = namedtuple('content', 'added, deleted')
 
-
     def __init__(self, base_dir='downloaded', delimiter='|'):
         self.client = gapiclient.Client(service='drive', scope='https://www.googleapis.com/auth/drive')
         self._logger = logging.getLogger(__name__)
@@ -60,11 +59,11 @@ class GSuiteDriver(basedriver.BaseDriver):
 
         if self.choice.drive == 'document':
             from docsparser import DocsParser
-            self.parser = DocsParser(self.client, self.choice, self.KumoObj)
+            self.parser = DocsParser(self.client, self.KumoObj)
 
         elif self.choice.drive in gsuite.SERVICES:
             from sheetsparser import SheetsParser
-            self.parser = SheetsParser(self.client, self.choice, self.KumoObj)
+            self.parser = SheetsParser(self.client, self.KumoObj)
         else:
             raise NotImplementedError('{} service not implemented'.format(self.choice.drive))
 
@@ -139,8 +138,8 @@ class GSuiteDriver(basedriver.BaseDriver):
 
         return flat_log
 
-    def recover_objects(self, log, flat_log):
-        return self.parser.recover_objects(log, flat_log)
+    def recover_objects(self, log, flat_log, choice):
+        return self.parser.recover_objects(log, flat_log, choice)
 
     def make_base_path(self):
         revision_range = '{start}-{end}'.format(start=self.choice_start, end=self.choice_end)
@@ -158,6 +157,7 @@ class GSuiteDriver(basedriver.BaseDriver):
         KIOutils.ensure_path(base_path)
         for obj in objects:
             self.write_object(obj, base_path)
+
 
 if __name__ == '__main__':
     print('hi')
