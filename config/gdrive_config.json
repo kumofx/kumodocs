@@ -1,7 +1,7 @@
 {
   "installed": {
     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "client_secret": "<GET YOURS FROM https://code.google.com/apis/console/>",
+    "client_secret": "g9h4eCeAB0dbR4q88hoogTK-",
     "token_uri": "https://accounts.google.com/o/oauth2/token",
     "client_email": "",
     "redirect_uris": [
@@ -9,7 +9,7 @@
       "oob"
     ],
     "client_x509_cert_url": "",
-    "client_id": "<GET YOURS FROM https://code.google.com/apis/console/>",
+    "client_id": "405134054884-3rr94n7o0klathcjg01s712c64od8d67.apps.googleusercontent.com",
     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs"
   }
 }
