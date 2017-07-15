@@ -158,6 +158,7 @@ class GSuiteDriver(basedriver.BaseDriver):
         base_path = self.make_base_path()
         KIOutils.ensure_path(base_path)
         for obj in objects:
+            KIOutils.ensure_path(os.path.join(base_path, os.path.dirname(obj.filename)))
             self.write_object(obj, base_path)
 
 
