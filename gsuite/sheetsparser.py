@@ -42,18 +42,20 @@ class SheetsParser(object):
             log_msg(self, 'Beginning of log = {}'.format(log[:10]), 'debug')
             raise gsuite.InvalidLogFormat('Check gsuite.LOG_START_CHR and compare to beginning of log')
 
-    def recover_objects(self, log, flat_log):
+    def recover_objects(self, log, flat_log, choice):
         """ Recovers plain text, comments, images, drawings, and suggestions from flat_log. 
         :return: A list of recovered objects as KumoObj
         """
 
-        log_obj = self.KumoObj(filename='revision-log.txt', content=json.dumps(log))
+        log_obj = self.KumoObj(filename='revision-log.txt', content=json.dumps(log, indent=2))
         objects = [log_obj]
 
         return objects
 
-    def parse_log(self, c_log, flat_log):
-        pass
+    def parse_log(self, c_log):
+        """ Log flattening not implemented yet"""
+        return []
 
-    def parse_snapshot(self, snapshot, flat_log):
-        pass
+    def parse_snapshot(self, snapshot):
+        """ Log flattening not implemented yet"""
+        return []

@@ -119,7 +119,7 @@ class SlidesParser(object):
         objects = []
         image_ids = self.get_slide_objects(log=log)
 
-        objects.append(self.KumoObj(filename='revision-log.txt', content=json.dumps(log, indent=4)))
+        objects.append(self.KumoObj(filename='revision-log.txt', content=json.dumps(log, indent=2)))
         objects.append(self.get_comments(file_choice=choice))
         objects.extend(self.get_plain_text(log=log))
 
@@ -134,13 +134,13 @@ class SlidesParser(object):
         log_msg(self, 'Recovering plain text', 'info')
         return self.pt_parser.get_plain_text(log)
 
-    def parse_log(self, c_log, flat_log):
+    def parse_log(self, c_log):
         """ Log flattening not implemented yet"""
-        pass
+        return []
 
-    def parse_snapshot(self, snapshot, flat_log):
+    def parse_snapshot(self, snapshot):
         """ Log flattening not implemented yet"""
-        pass
+        return []
 
     def get_slide_objects(self, log):
         """ Gets objects(only images for now) associated with slide from the log"""
