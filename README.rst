@@ -30,7 +30,7 @@ Requirements include:
 
 
 1. Get a client ID and client secret
----------------------------------
+------------------------------------
 First, Kumodocs needs an OAuth 2.0 client ID and client secret to make requests to Google's sign-in endpoints.
 
 To find your project's client ID and client secret, do the following:
@@ -48,7 +48,7 @@ To find your project's client ID and client secret, do the following:
 5. Add the client ID and client secret to config/gdrive_config.json 
 
 2. Python Program
-----------------------
+-----------------
 
 The recommended method of installation is to create a virtual environment using the virtualenv python package ::
 
