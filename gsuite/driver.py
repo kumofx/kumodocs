@@ -84,8 +84,9 @@ class GSuiteDriver(basedriver.BaseDriver):
             raise SystemExit
         elif self.choice.drive == 'presentation':
             self.logger.debug('Non document drive - setting revision to 1, max_revs')
-            start, end = 1, self.choice.max_revs
-            print('Partial revisions for {} are not supported. Setting start=1 and end=max'.format(self.choice.drive))
+            start = 1
+            print('Partial revisions for {} are not supported. Setting start = 1'.format(self.choice.drive))
+            end = self._end_rev_range(start=start, end=end)
         else:
             print('Please choose revision range\n')
             start = self._start_rev_range(start=start)
