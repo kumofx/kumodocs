@@ -60,7 +60,9 @@ class GSuiteDriver(basedriver.BaseDriver):
         if self.choice.drive == 'document':
             from docsparser import DocsParser
             self.parser = DocsParser(self.client, self.KumoObj)
-
+        elif self.choice.drive == 'presentation':
+            from slidesparser import SlidesParser
+            self.parser = SlidesParser(self.client, self.KumoObj)
         elif self.choice.drive in gsuite.SERVICES:
             from sheetsparser import SheetsParser
             self.parser = SheetsParser(self.client, self.KumoObj)
