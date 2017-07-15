@@ -306,6 +306,7 @@ class DocsParser(object):
     def get_images(self, image_ids, get_download_ext, file_choice):
         """
         Retrives images using private API and image_ids
+        :param file_choice: gsuite.FileChoice object
         :param image_ids: Cosmo image IDs retrieved from a Google Docs log
         :param get_download_ext: Function which retrieves the proper image extension
         :return: List of KumoObj with image contents. 
@@ -316,10 +317,10 @@ class DocsParser(object):
 
         return self.create_obj_list(images, 'img')
 
-    def create_obj_list(self, objects, type):
+    def create_obj_list(self, objects, type_):
         obj_list = []
         for i, obj in enumerate(objects):
-            filename = '{}{}{}'.format(type, i, obj.extension)
+            filename = '{}{}{}'.format(type_, i, obj.extension)
             obj_list.append(self.KumoObj(filename=filename, content=obj.content))
         return obj_list
 
