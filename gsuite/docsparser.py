@@ -92,12 +92,12 @@ class DocsParser(object):
 
     def stringify(self, log):
         """ Converts Google Docs log into a writable string """
-        return json.dumps(log)
+        return json.dumps(log, indent=2)
 
-    def parse_log(self, c_log, flat_log):
+    def parse_log(self, c_log):
         """parses changelog part of log"""
 
-        flat_log.append('changelog')
+        flat_log = ['changelog']
         for entry in c_log:
             action_dict = entry[0]
             ts_id_info = entry[1:-1]
@@ -114,6 +114,8 @@ class DocsParser(object):
                 line.append(action_type)
                 line.append(json.dumps(self.rename_keys(action_dict)))
                 flat_log.append(self.delimiter.join(str(item) for item in line))
+
+        return flat_log
 
     def flatten_mts(self, entry, line_copy, line):
         """ Recursively flatten multiset entry.
@@ -155,10 +157,10 @@ class DocsParser(object):
 
         return log_dict
 
-    def parse_snapshot(self, snapshot, flat_log):
+    def parse_snapshot(self, snapshot):
         """parses snapshot part of log"""
 
-        flat_log.append('chunkedSnapshot')
+        flat_log = ['chunkedSnapshot']
         snapshot = snapshot[0]
 
         # take care of plain text paste entry
@@ -172,6 +174,8 @@ class DocsParser(object):
         for entry in snapshot:
             line = self.get_snapshot_line(snapshot_entry=entry)
             flat_log.append(DELIMITER.join(str(item) for item in line))
+
+        return flat_log
 
     def get_snapshot_line(self, snapshot_entry):
         """
