@@ -55,7 +55,7 @@ class Client(object):
             http = credentials.authorize(httplib2.Http())
             client = googleapiclient.discovery.build(serviceName=service_name, version="v2", http=http,
                                                      cache_discovery=False)
-        except Exception as e:
+        except Exception:
             log.error('Failed to create service', exc_info=True)
             raise sys.exit(1)
         else:
@@ -105,10 +105,10 @@ class Client(object):
 
             try:
                 file_id = choice.read()
-            except AttributeError as e:
+            except AttributeError:
                 log.error('No file chosen. Exiting.')
                 sys.exit(2)
-            except IOError as e:
+            except IOError:
                 log.error('Error reading file. Exiting')
                 sys.exit(3)
             else:
@@ -140,7 +140,7 @@ class Client(object):
 
                 try:
                     files = self.service.files().list(**param).execute()
-                except googleapiclient.errors.HttpError, e:
+                except googleapiclient.errors.HttpError:
                     log.error('Failed to retrieve list of files', exc_info=True)
                     break
                 else:

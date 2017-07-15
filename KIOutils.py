@@ -88,11 +88,13 @@ def choose_file_dialog(**options):
 
 def ensure_path(path):
     """ Attempts to make a directory and raises exception if there is an issue"""
+
     try:
         os.makedirs(path)
-    except OSError as exception:
-        # if the directory exists, ignore error
-        if exception.errno != errno.EEXIST:
+    except (OSError, WindowsError) as exception:
+        # if the directory exists or path is empty, ignore error
+        if exception.errno != errno.EEXIST and exception.errno != errno.ENOENT:
+            print exception.errno
             log.exception('I/O error creating directory at: {}'.format(path))
             raise
 
