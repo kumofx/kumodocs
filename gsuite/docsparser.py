@@ -487,6 +487,7 @@ class DrawingsParser(object):
 
 
 class PlaintextParser(object):
+    """ Methods to recover plain text from log """
     def __init__(self):
         pass
 
