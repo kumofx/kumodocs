@@ -82,14 +82,14 @@ class GSuiteDriver(basedriver.BaseDriver):
             print('{} is not a supported service at this time')
             self.logger.debug('Unsupported service: {}'.format(self.choice.drive))
             raise SystemExit
-        elif self.choice.drive == 'presentation' or self.choice.drive == 'drawing':
+        elif self.choice.drive == 'document':
+            print('Please choose revision range\n')
+            start = self._start_rev_range(start=start)
+            end = self._end_rev_range(start=start, end=end)
+        else:
             self.logger.debug('Non document drive - setting starting revision to 1')
             start = 1
             print('Partial revisions for {} are not supported. Setting start = 1'.format(self.choice.drive))
-            end = self._end_rev_range(start=start, end=end)
-        else:
-            print('Please choose revision range\n')
-            start = self._start_rev_range(start=start)
             end = self._end_rev_range(start=start, end=end)
 
         self.choice_start, self.choice_end = start, end
@@ -130,12 +130,9 @@ class GSuiteDriver(basedriver.BaseDriver):
 
     def flatten_log(self, log):
         """Splits into snapshot and changelog, parses each, and returns flat log"""
-        # TODO take out flat_log by reference
         flat_log = []
 
         try:
-            # self.parser.parse_snapshot(log['chunkedSnapshot'], flat_log)
-            # self.parser.parse_log(log['changelog'], flat_log)
             flat_log.extend(self.parser.parse_snapshot(log['chunkedSnapshot']))
             flat_log.extend(self.parser.parse_log(log['changelog']))
         except KeyError:
