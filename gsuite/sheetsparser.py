@@ -2,6 +2,7 @@ import json
 import logging
 
 import gsuite
+from gsuite.docsparser import CommentsParser
 
 DELIMITER = '|'
 
@@ -31,6 +32,9 @@ class SheetsParser(object):
         self.service = client.service  # api service
         self.KumoObj = KumoObj
 
+        # parsers
+        self.comments_parser = CommentsParser(self.service)
+
     def get_log(self, start, end, choice):
         log_msg(self, "Retrieving revision log", "info")
         log_url = self.client.create_log_url(start=start, end=end, choice=choice)
@@ -47,10 +51,20 @@ class SheetsParser(object):
         :return: A list of recovered objects as KumoObj
         """
 
-        log_obj = self.KumoObj(filename='revision-log.txt', content=json.dumps(log, indent=2))
-        objects = [log_obj]
-
+        objects = []
+        objects.extend([self.KumoObj(filename='revision-log.txt', content=json.dumps(log, indent=2))])
+        objects.extend([self.get_comments(file_choice=choice)])
         return objects
+
+    def get_comments(self, file_choice):
+        """
+        Retrieves comment data using GSuite API.
+        :return: KumoObj containing retrieved comment data
+        """
+        log_msg(self, 'Retrieving comments', 'info')
+        comments = '\n'.join(str(line) for line in self.comments_parser.get_comments(file_choice.file_id))
+        comment_obj = self.KumoObj(filename='comments.txt', content=comments)
+        return comment_obj
 
     def parse_log(self, c_log):
         """ Log flattening not implemented yet"""
