@@ -31,6 +31,13 @@ class SlidesParser(object):
         def __init__(self, line):
             self.line = line
 
+            # indices associated with nested access
+            self.mts = [0, 0]
+            self.ins = [0, 1, 1, 0]
+            self.vid = [0, 1, 0, 4]
+            self.url = [0, 1, 0, 4, 11]
+            self.not_drive = [0, 1, 0, 4, 9]
+
         @property
         def image_id(self):
             """ Returns image_id associated with image insertion """
@@ -45,7 +52,7 @@ class SlidesParser(object):
                     else:
                         id_index = 9  # _image_id = self.line[0][1][0][4][9]
                 else:  # uploaded by url, source in [][]..[9], image_id in [11]
-                    id_index = 11  # _image_id = self.line[0][1][0][4][11]
+                    id_index = 9 if self.has_vid_insert() else 11  # _image_id = self.line[0][1][0][4][11]
 
                 _image_id = image_section[id_index]
             return _image_id
@@ -60,25 +67,35 @@ class SlidesParser(object):
 
             return _slide_id
 
+        def check_nested_value(self, index_list, target, func):
+            """
+            Accesses a deeply nested item in self.line and compares func(value) to target.  For index_list = [0, 1,
+            1, 0] and target = 44, this is equivalent to func(self.line[0][1][1][0]) == 44
+            :param index_list: List of indices
+            :param target: Value to compare against
+            :param func:  Function applied to the result of self.line[][]...[]
+            :return: Boolean comparing func(self.line[index_list[0]][index_list[1]]...[index_list[n]]) == target
+            """
+
+            try:
+                return func(reduce(lambda a, b: a.__getitem__(b), index_list, self.line)) == target
+            except:
+                return False
+
         def has_multiset(self):
-            """ Returns true if line contains a multiset"""
-            return self.line[0][0] == 4
+            return self.check_nested_value(self.mts, 4, int)
 
         def has_insert_section(self):
-            """ Returns true if line contains image insert section"""
-            return self.line[0][1][1][0] == 44
+            return self.check_nested_value(self.ins, 44, int)
 
         def has_vid_insert(self):
-            """ Returns true if line contains a video insert section"""
-            return len(self.line[0][1][0][4]) == 18
+            return self.check_nested_value(self.vid, 18, len)
 
         def is_url_src(self):
-            """ Returns true if image source is from url """
-            return type(self.line[0][1][0][4][11]) == list
+            return self.check_nested_value(self.url, list, type)
 
         def not_drive_src(self):
-            """ Returns true if image source is not from drive """
-            return type(self.line[0][1][0][4][9]) == list
+            return self.check_nested_value(self.not_drive, target=list, func=type)
 
     def __init__(self, client, KumoObj, delimiter='|'):
         self.log = None
@@ -147,10 +164,9 @@ class SlidesParser(object):
 
         log_msg(self, 'Retrieving images', 'info')
         image_ids = {}
-        for line in (self.SlidesLine(entry) for entry in log['changelog']):
 
-            # exclude video inserts for now
-            if line.has_multiset() and line.has_insert_section() and not line.has_vid_insert():
+        for line in (self.SlidesLine(entry) for entry in log['changelog']):
+            if line.has_multiset() and line.has_insert_section():
                 slide_id = line.slide_id
                 image_id = line.image_id
                 image_ids[image_id] = slide_id
@@ -197,6 +213,7 @@ class SlidesParser(object):
 
 class PlainTextParser(object):
     """ Returns a list of KumoObj containing plain-text for each text box for each slide"""
+
     def __init__(self, KumoObj):
         self.KumoObj = KumoObj
 
