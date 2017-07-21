@@ -54,8 +54,12 @@ class TestKIOutils(unittest.TestCase):
     def test_remove_directory(self):
         """ Just wraps shutil.rmtree() in a try/except to ignore files that don't exist"""
         KIOutils.ensure_path('some/path/here')
-
-        pass
+        open('some/path/here/test1.txt', 'a').close()
+        open('some/path/here/test2.txt', 'a').close()
+        KIOutils.remove_directory('some/path/here')
+        with self.assertRaises(IOError):
+            open('/some/path/here/test1.txt')
+            open('/some/path/here/test2.txt')
 
     def test_temp_directory(self):
         """ Assert temporary directory is writable, and successfully removed at end"""
@@ -63,10 +67,13 @@ class TestKIOutils(unittest.TestCase):
         with KIOutils.temp_directory() as td:
             tempdir = td
             filename = r'{}\{}'.format(td, 'temp.txt')
-            with open(filename, 'w') as f:
-                f.write('msg')
+            try:
+                with open(filename, 'w') as f:
+                    f.write('msg')
+            except IOError:
+                self.fail('IOError in test_temp_directory')
 
-        self.assertFalse(os.path.exists(td))
+        self.assertFalse(os.path.exists(tempdir))
         self.assertFalse(os.path.isfile(filename))
 
 
