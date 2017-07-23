@@ -97,7 +97,7 @@ class DocsParser(object):
     def parse_log(self, c_log):
         """parses changelog part of log"""
 
-        flat_log = ['changelog']
+        flat_log = ['changelog{}{}'.format(DELIMITER, '{}')]
         for entry in c_log:
             action_dict = entry[0]
             ts_id_info = entry[1:-1]
@@ -160,7 +160,7 @@ class DocsParser(object):
     def parse_snapshot(self, snapshot):
         """parses snapshot part of log"""
 
-        flat_log = ['chunkedSnapshot']
+        flat_log = ['chunkedSnapshot{}{}'.format(DELIMITER, '{}')]
         snapshot = snapshot[0]
 
         # take care of plain text paste entry
@@ -500,7 +500,9 @@ class PlaintextParser(object):
     def get_plain_text(self, flat_log):
         """ converts flat log to plaintext"""
         plain_text = ''
-        log_dict = self.get_dict(flat_log[flat_log.index('chunkedSnapshot') + 1])
+        snapshot_line = 'chunkedSnapshot{}{}'.format(DELIMITER, '{}')
+        changelog_line = 'changelog{}{}'.format(DELIMITER, '{}')
+        log_dict = self.get_dict(flat_log[flat_log.index(snapshot_line) + 1])
 
         # should not contain a string if log starts at revision 1
         if 'string' in log_dict:
@@ -509,7 +511,7 @@ class PlaintextParser(object):
             plain_text += chunk_string
 
         # start after changelog line, which has no data
-        cl_index = flat_log.index('changelog') + 1
+        cl_index = flat_log.index(changelog_line) + 1
 
         for line in flat_log[cl_index:]:
             try:
