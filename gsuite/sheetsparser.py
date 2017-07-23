@@ -24,13 +24,13 @@ def log_msg(cls, msg, error_level):
 
 
 class SheetsParser(object):
-    def __init__(self, client, KumoObj, delimiter='|'):
+    def __init__(self, client, kumo_obj, delimiter='|'):
         self.log = None
         self.flat_log = None
         self.delimiter = delimiter
         self.client = client
         self.service = client.service  # api service
-        self.KumoObj = KumoObj
+        self.KumoObj = kumo_obj
 
         # parsers
         self.comments_parser = CommentsParser(self.service)
@@ -50,8 +50,10 @@ class SheetsParser(object):
         """ Recovers plain text, comments, images, drawings, and suggestions from flat_log. 
         :return: A list of recovered objects as KumoObj
         """
-
         objects = []
+
+        if flat_log:
+            objects.extend([self.KumoObj(filename='flat-log.txt', content='\n'.join(str(line) for line in flat_log))])
         objects.extend([self.KumoObj(filename='revision-log.txt', content=json.dumps(log, indent=2))])
         objects.extend([self.get_comments(file_choice=choice)])
         return objects

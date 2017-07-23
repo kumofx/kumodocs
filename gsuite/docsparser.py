@@ -44,13 +44,13 @@ class DocsParser(object):
 
     # Drawing = namedtuple('Drawing', 'd_id width height')
 
-    def __init__(self, client, KumoObj, delimiter='|'):
+    def __init__(self, client, kumo_obj, delimiter='|'):
         self.log = None
         self.flat_log = None
         self.delimiter = delimiter
         self.client = client
         self.service = client.service  # api service
-        self.KumoObj = KumoObj
+        self.KumoObj = kumo_obj
 
         # parsers TODO: refactor to list that executes each using self.flat_log
         self.comments_parser = CommentsParser(self.service)
@@ -400,7 +400,7 @@ class ImageParser(object):
         links = self.get_image_links(image_ids=image_ids, file_id=file_id, drive=drive)
         for url, img_id in links.itervalues():
             try:
-                response, content = self.service._http.request(url)
+                response, content = self.service.http.request(url)
             except:
                 log_msg(cls=self, msg='Image could not be retrieved:\n\turl={}\n\t'
                                       'img_id={}'.format(url, img_id), error_level='debug')
@@ -417,8 +417,8 @@ class ImageParser(object):
         render_url, request_body, my_headers = self.get_render_request(image_ids=image_ids, file_id=file_id,
                                                                        drive=drive)
         try:
-            response, content = self.service._http.request(render_url, method='POST',
-                                                           body=request_body, headers=my_headers)
+            response, content = self.service.http.request(render_url, method='POST',
+                                                          body=request_body, headers=my_headers)
         except:
             log_msg(cls=self, msg='Renderdata url cannot be resolved:\n\trender_url={}\n\t'
                                   'body={}'.format(render_url, request_body), error_level='debug')
@@ -484,7 +484,7 @@ class DrawingsParser(object):
             # url = DRAW_PATH.format(d_id=drawing_id[0], w=drawing_id[1], h=drawing_id[2])
             params = gsuite.DRAW_PARAMS.format(w=drawing.width, h=drawing.height)
             url = gsuite.API_BASE.format(params=params, drive=drive, file_id=drawing.d_id)
-            response, content = self.service._http.request(url)
+            response, content = self.service.http.request(url)
             extension = get_download_ext(response)
             drawings.append(self.Drawing(content, extension))
 
@@ -493,6 +493,7 @@ class DrawingsParser(object):
 
 class PlaintextParser(object):
     """ Methods to recover plain text from log """
+
     def __init__(self):
         pass
 

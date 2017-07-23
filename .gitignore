@@ -51,6 +51,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+.pythoscope
 
 # Sphinx documentation
 docs/_build/

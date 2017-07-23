@@ -1,2 +1,7 @@
+nose
+nose
+nose
+nose
+nose
 google-api-python-client==1.6.2
 click==6.7

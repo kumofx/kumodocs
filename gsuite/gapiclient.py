@@ -55,6 +55,7 @@ class Client(object):
             http = credentials.authorize(httplib2.Http())
             client = googleapiclient.discovery.build(serviceName=service_name, version="v2", http=http,
                                                      cache_discovery=False)
+            client.http = client._http  # directly expose http without using 'protected' _http
         except Exception:
             log.error('Failed to create service', exc_info=True)
             raise sys.exit(1)
@@ -80,7 +81,7 @@ class Client(object):
         """
 
         try:
-            response, content = self.service._http.request(url, **kwargs)
+            response, content = self.service.http.request(url, **kwargs)
             if response['status'] != '200':
                 log.critical('gapiclient.request has non-200 response status')
                 log.debug('response = {}'.format(response))

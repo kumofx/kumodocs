@@ -97,13 +97,13 @@ class SlidesParser(object):
         def not_drive_src(self):
             return self.check_nested_value(self.not_drive, target=list, func=type)
 
-    def __init__(self, client, KumoObj, delimiter='|'):
+    def __init__(self, client, kumo_obj, delimiter='|'):
         self.log = None
         self.flat_log = None
         self.delimiter = delimiter
         self.client = client
         self.service = client.service  # api service
-        self.KumoObj = KumoObj
+        self.KumoObj = kumo_obj
 
         # parsers
         self.image_parser = ImageParser(self.service)
@@ -134,6 +134,8 @@ class SlidesParser(object):
         """
 
         objects = []
+        if flat_log:
+            objects.extend([self.KumoObj(filename='flat-log.txt', content='\n'.join(str(line) for line in flat_log))])
         image_ids = self.get_slide_objects(log=log)
 
         objects.append(self.KumoObj(filename='revision-log.txt', content=json.dumps(log, indent=2)))
@@ -214,8 +216,8 @@ class SlidesParser(object):
 class PlainTextParser(object):
     """ Returns a list of KumoObj containing plain-text for each text box for each slide"""
 
-    def __init__(self, KumoObj):
-        self.KumoObj = KumoObj
+    def __init__(self, kumo_obj):
+        self.KumoObj = kumo_obj
 
     def get_plain_text(self, log):
         p = Presentation(log)
@@ -357,5 +359,5 @@ class Presentation(object):
         """ Swap slides at position line[1] and line[2] in slide_list"""
         start_index = line[1]
         end_index = line[2]
-        self.slide_list[start_index] = self.slide_list[end_index]
-        self.slide_list[end_index] = self.slide_list[start_index]
+        self.slide_list[start_index], self.slide_list[end_index] = self.slide_list[end_index], self.slide_list[
+            start_index]

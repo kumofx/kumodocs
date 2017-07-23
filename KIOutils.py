@@ -1,6 +1,7 @@
 import ConfigParser
 import Tkinter as Tk
 import errno
+import hashlib
 import logging
 import ntpath
 import os
@@ -124,6 +125,28 @@ def get_abs_config_path():
     token_path = os.path.join(file_dir, *tokens)
     client_secrets_path = os.path.join(file_dir, *client_secrets)
     return token_path, client_secrets_path
+
+
+def block_hash_file(f, block_size=2 ** 13, h_alg='md5'):
+    """
+    Reads block_size chunks from f to calculate a hash value.
+    :param f: open file handle
+    :param block_size: block_size of file read in
+    :param h_alg: must be an algorithm contained in `hashlib.py`
+    :return: Hex digest of file given h_alg contained in `hashlib.py`
+    """
+
+    try:
+        m = getattr(hashlib, h_alg)()
+    except AttributeError:
+        raise
+
+    while True:
+        data = f.read(block_size)
+        if not data:
+            break
+        m.update(data)
+    return m.hexdigest()
 
 
 @contextmanager
