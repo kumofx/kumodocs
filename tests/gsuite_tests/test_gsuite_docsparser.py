@@ -1,14 +1,8 @@
 from nose import SkipTest
 
-import gsuite.driver
-from gsuite.docsparser import DocsParser
-from tests.gsuite import hash_sample_images, check_doc, check_img
+from tests.gsuite_tests import get_driver, check_recover_objects
 
-driver = gsuite.driver.GSuiteDriver()
-driver.parser = DocsParser(driver.client, driver.KumoObj)
-driver.choice = gsuite.FileChoice(file_id='1AD0Shz2av1uXAr3Uea36QZCUNOHhh6cuv2FD4qxtsdM', title='docstest',
-                                  drive='document', max_revs=75)
-
+driver = get_driver('document')
 
 # noinspection PyClassHasNoInit
 class TestLogMsg:
@@ -38,19 +32,18 @@ class TestDocsParser:
         raise SkipTest  # TODO: implement your test here
 
     def test_recover_objects(self):
-        log = driver.get_log(start=1, end=driver.choice.max_revs)
-        flat_log = driver.flatten_log(log)
-        objects = [(o.filename, o.content) for o in driver.recover_objects(log=log, flat_log=flat_log,
-                                                                           choice=driver.choice)]
-        hashes = hash_sample_images(objects)
-        for fn, content in objects:
-            if fn.endswith('.txt'):
-                yield check_doc, fn, content
-            else:
-                yield check_img, fn, content, hashes
-                # print objects == expected
-                # docs_parser = DocsParser(client, KumoObj, delimiter)
-                # assert_equal(expected, docs_parser.recover_objects(log, flat_log, choice))
+        # sample = driver.choice.title
+        # log = driver.get_log(start=1, end=driver.choice.max_revs)
+        # flat_log = driver.flatten_log(log)
+        # objects = [(o.filename, o.content) for o in driver.recover_objects(log=log, flat_log=flat_log,
+        #                                                                    choice=driver.choice)]
+        # hashes = hash_sample_images(sample)
+        # for fn, content in objects:
+        #     if fn.endswith('.txt'):
+        #         yield check_doc, fn, content, sample
+        #     else:
+        #         yield check_img, fn, content, hashes
+        check_recover_objects(driver)
 
     def test_create_obj_list(self):
         # docs_parser = DocsParser(client, KumoObj, delimiter)
