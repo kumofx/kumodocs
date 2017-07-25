@@ -78,8 +78,6 @@ def read_sample_images(sample):
 
 
 def check_recover_objects(driver):
-    # sheets_parser = SheetsParser(client, KumoObj, delimiter)
-    # assert_equal(expected, sheets_parser.recover_objects(log, flat_log, choice))
     sample = driver.choice.title
     log = driver.get_log(start=1, end=driver.choice.max_revs)
     flat_log = driver.flatten_log(log)
