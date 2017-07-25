@@ -1,11 +1,25 @@
 from nose import SkipTest
 
+from tests.gsuite_tests import get_driver, check_recover_objects
+
+
+# noinspection PyClassHasNoInit
+class TestDrawingsParser:
+    def test_recover_objects(self):
+        # slides_parser = SlidesParser(client, KumoObj, delimiter)
+        # assert_equal(expected, slides_parser.recover_objects(log, flat_log, choice))
+        driver = get_driver('drawing')
+        check_recover_objects(driver)
 
 # noinspection PyClassHasNoInit
 class TestSlidesParser:
     def test___init__(self):
         # slides_parser = SlidesParser(client, KumoObj, delimiter)
         raise SkipTest  # TODO: implement your test here
+
+    def test_recover_objects(self):
+        driver = get_driver('presentation')
+        check_recover_objects(driver)
 
     def test_create_obj_list(self):
         # slides_parser = SlidesParser(client, KumoObj, delimiter)
@@ -45,11 +59,6 @@ class TestSlidesParser:
     def test_parse_snapshot(self):
         # slides_parser = SlidesParser(client, KumoObj, delimiter)
         # assert_equal(expected, slides_parser.parse_snapshot(snapshot))
-        raise SkipTest  # TODO: implement your test here
-
-    def test_recover_objects(self):
-        # slides_parser = SlidesParser(client, KumoObj, delimiter)
-        # assert_equal(expected, slides_parser.recover_objects(log, flat_log, choice))
         raise SkipTest  # TODO: implement your test here
 
 
