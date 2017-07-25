@@ -8,7 +8,7 @@ These artifacts have no presence on the local machine.
 In GSuite collaboration services, these cloud natives have the form of append-only logs that track each minor change to a document.
 Kumodocs processes these logs to retrieve comments, suggestions, plain-text, drawings, and deleted images for any given revision.
 
-Kumodocs currently supports Google Docs and Google Slides.
+Kumodocs currently supports object retrieval from Docs and Slides, with log/comment retrieval from Sheets and Drawings.
 Google drive contents are retrieved and the user is prompted to choose a file. 
 The revision log for that file is obtained and processed for the artifacts mentioned above. 
 
@@ -26,12 +26,14 @@ Requirements include:
 - Python 2.7.x
 - google-api-python-client==1.6.2 
 - click==6.7
+- nose==1.3.7 (optional, for unit tests)
 - virtualenv (optional) 
 
 
 1. Get a client ID and client secret
 ------------------------------------
 First, Kumodocs needs an OAuth 2.0 client ID and client secret to make requests to Google's sign-in endpoints.
+A sample client ID and secret have been supplied in ./config.  However, it is recommended to create your own.
 
 To find your project's client ID and client secret, do the following:
 
@@ -54,6 +56,11 @@ The recommended method of installation is to create a virtual environment using 
 
 $ cd kumodocs
 $ virtualenv kumodocs
+
+Currently, kumodocs requires tkinter.  This must be installed on linux separately; for distributions with apt, this
+will install the necessary files: ::
+
+$ sudo apt install python-tk
 
 Activate the virtual environment by using source activate (linux) or running activate.bat (windows) ::
 
@@ -92,7 +99,6 @@ If packages are locally installed:
 Known Limitations and Issues
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Sheets, Slides, and Drawings retrieve only revision logs. 
 - Forms module is not implemented yet.
 
 
