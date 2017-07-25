@@ -1,5 +1,9 @@
 from nose import SkipTest
 
+from tests.gsuite_tests import get_driver, check_recover_objects
+
+driver = get_driver('spreadsheet')
+
 
 # noinspection PyClassHasNoInit
 class TestSheetsParser:
@@ -28,6 +32,4 @@ class TestSheetsParser:
         raise SkipTest  # TODO: implement your test here
 
     def test_recover_objects(self):
-        # sheets_parser = SheetsParser(client, KumoObj, delimiter)
-        # assert_equal(expected, sheets_parser.recover_objects(log, flat_log, choice))
-        raise SkipTest  # TODO: implement your test here
+        check_recover_objects(driver)
