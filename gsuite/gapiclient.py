@@ -1,5 +1,4 @@
 """Common methods for initializing GSuite API client and listing GSuite files. """
-
 import json
 import logging
 import os
@@ -55,7 +54,7 @@ class Client(object):
             http = credentials.authorize(httplib2.Http())
             client = googleapiclient.discovery.build(serviceName=service_name, version="v2", http=http,
                                                      cache_discovery=False)
-            client.http = client._http  # directly expose http without using 'protected' _http
+            client.http = http  # directly expose http without using 'protected' _http
         except Exception:
             log.error('Failed to create service', exc_info=True)
             raise sys.exit(1)
@@ -86,9 +85,10 @@ class Client(object):
                 log.critical('gapiclient.request has non-200 response status')
                 log.debug('response = {}'.format(response))
                 log.debug('content = {}'.format(content))
-                raise googleapiclient.errors.HttpError
+                raise googleapiclient.errors.HttpError(resp=response, content=content, uri=url)
         except googleapiclient.errors.HttpError:
             log.exception('Could not obtain log. Check file_id, max revisions, and permission for file')
+            sys.exit(3)
         else:
             return response, content
 
