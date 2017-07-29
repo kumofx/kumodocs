@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from collections import namedtuple
@@ -16,13 +17,14 @@ class GSuiteDriver(basedriver.BaseDriver):
 
     SuggestionContent = namedtuple('content', 'added, deleted')
 
-    def __init__(self, base_dir='downloaded', delimiter='|'):
-        self.client = gapiclient.Client(service='drive', scope='https://www.googleapis.com/auth/drive')
+    def __init__(self, base_dir='downloaded', delimiter='|', parser=None):
+        self.client = gapiclient.Client(service='drive', scope=['https://www.googleapis.com/auth/drive',
+                                                                'https://www.googleapis.com/auth/forms'])
         self._logger = logging.getLogger(__name__)
         self._base_dir = base_dir
         self.delimiter = delimiter
         self.choice = None
-        self._parser = None
+        self._parser = parser
         self.choice_start = None
         self.choice_end = None
 
@@ -122,11 +124,21 @@ class GSuiteDriver(basedriver.BaseDriver):
         Gets log from the google api client using self.choice data along with starting and ending revision 
         :param start: Starting revision
         :param end: Ending revision
-        :param kwargs: Unused here, as the necessary information is in self.choice 
+        :param kwargs: Optional choice parameter for retrieving other logs
         :return: Native revision log
         """
 
-        return self.parser.get_log(start=start, end=end, choice=self.choice)
+        choice = kwargs.get('choice', self.choice)
+        self.logger.info('Retrieving revision log')
+        log_url = self.client.create_log_url(start=start, end=end, choice=choice)
+        response, log = self.client.request(url=log_url)
+        if log.startswith(gsuite.LOG_START_CHR):
+            trimmed_log = log[len(gsuite.LOG_START_CHR):]
+        else:
+            self.logger.debug('Beginning of log = {}'.format(log[:10]))
+            raise gsuite.InvalidLogFormat('Check gsuite.LOG_START_CHR and compare to beginning of log')
+
+        return json.loads(trimmed_log)
 
     def flatten_log(self, log):
         """Splits into snapshot and changelog, parses each, and returns flat log"""
