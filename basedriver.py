@@ -97,21 +97,21 @@ class BaseDriver(object):
         :rtype: (int, int) 
         """
 
-    def write_object(self, kumoobj, base_path):
+    def write_object(self, kumo_obj, base_path):
         """
         Writes object to disk at location specified in directory
-        :param kumoobj: An object to write, containing originating service, file_name, start and end revision, 
+        :param kumo_obj: An object to write, containing originating service, file_name, start and end revision,
         as well as content and object type. 
-        :param base_path: Directory in which kumoobj will be written. 
+        :param base_path: Directory in which kumo_obj will be written.
         :return: None
         """
 
-        outfile = os.path.realpath(os.path.join(base_path, kumoobj.filename))
-        self.logger.info('Writing {} to disk'.format(kumoobj.filename))
-        self.logger.debug('Writing {} to disk at location {}'.format(kumoobj.filename, outfile))
+        outfile = os.path.realpath(os.path.join(base_path, kumo_obj.filename))
+        self.logger.info('Writing {} to disk'.format(kumo_obj.filename))
+        self.logger.debug('Writing {} to disk at location {}'.format(kumo_obj.filename, outfile))
 
         try:
             with open(outfile, 'wb') as f:
-                f.write(kumoobj.content)
+                f.write(kumo_obj.content)
         except IOError:
-            self.logger.exception('Failed to write {} object'.format(kumoobj.filename))
+            self.logger.exception('Failed to write {} object'.format(kumo_obj.filename))

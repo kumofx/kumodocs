@@ -1,3 +1,4 @@
+# noinspection SpellCheckingInspection
 _MAPPINGS = {
     "ty": "type",
     "st": "style_type",
