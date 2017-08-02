@@ -87,7 +87,8 @@ class Client(object):
                 log.debug('content = {}'.format(content))
                 raise googleapiclient.errors.HttpError(resp=response, content=content, uri=url)
         except googleapiclient.errors.HttpError:
-            log.exception('Could not obtain log. Check file_id, max revisions, and permission for file')
+            log.debug('googleapiclient.errors.HttpError in gapiclient', exc_info=True)
+            log.error('Could not obtain log. Check file_id, max revisions, and permission for file')
             sys.exit(3)
         else:
             return response, content
@@ -115,7 +116,7 @@ class Client(object):
             else:
                 choice.close()
                 title, drive = KIOutils.split_title(choice.name)
-                log.info('Chose file {} from service {}'.format(title, drive))
+                log.info('Chose file "{}" from service "{}"'.format(title, drive))
 
         revisions = self.service.revisions().list(fileId=file_id, fields='items(id)').execute()
         max_revs = revisions['items'][-1]['id']
@@ -130,12 +131,14 @@ class Client(object):
         :return: List of File resources 
         """
 
+        log.info('Retrieving list of drive files')
         result = defaultdict(list)
         page_token = None
-        for drive_type in gsuite.SERVICES:
+        email = self.email_address()
+        for drive_type in gsuite.LOG_DRIVE:
             while True:
-                param = {'q': gsuite.MIME_TYPE.format(drive_type),
-                         'fields': 'items(title, id, editable), nextPageToken'}
+                param = {'q': gsuite.Q_PARAM.format(email=email, drive_type=drive_type),
+                         'fields': 'items(title, id), nextPageToken'}
                 if page_token:
                     param['pageToken'] = page_token
 
@@ -145,12 +148,16 @@ class Client(object):
                     log.error('Failed to retrieve list of files', exc_info=True)
                     break
                 else:
-                    editable_files = filter(lambda f: f['editable'], files['items'])
-                    result[drive_type].extend(editable_files)
+                    result[drive_type].extend(files['items'])
                     page_token = files.get('nextPageToken')
                     if not page_token:
                         break
         return result
+
+    def email_address(self):
+        """ Returns email address for the currently authenticated user """
+        about_me = self.service.about().get(fields='user(emailAddress)').execute()
+        return about_me['user']['emailAddress']
 
     @staticmethod
     def create_temp_files(temp_dir, files):
