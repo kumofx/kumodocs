@@ -4,9 +4,8 @@ from collections import OrderedDict, namedtuple
 
 import gsuite
 import mappings
-from gsuite import log_msg
 
-DELIMITER = '|'
+log_msg = gsuite.log_msg
 
 
 # TODO refactor all service requests to gapiclient
@@ -72,7 +71,7 @@ class DocsParser(object):
     def parse_log(self, c_log):
         """parses changelog part of log"""
 
-        flat_log = ['changelog{}{}'.format(DELIMITER, '{}')]
+        flat_log = ['changelog{}{}'.format(self.delimiter, '{}')]
         for entry in c_log:
             action_dict = entry[0]
             ts_id_info = entry[1:-1]
@@ -135,7 +134,7 @@ class DocsParser(object):
     def parse_snapshot(self, snapshot):
         """parses snapshot part of log"""
 
-        flat_log = ['chunkedSnapshot{}{}'.format(DELIMITER, '{}')]
+        flat_log = ['chunkedSnapshot{}{}'.format(self.delimiter, '{}')]
         snapshot = snapshot[0]
 
         # take care of plain text paste entry
@@ -148,7 +147,7 @@ class DocsParser(object):
         # parse style modifications
         for entry in snapshot:
             line = self.get_snapshot_line(snapshot_entry=entry)
-            flat_log.append(DELIMITER.join(str(item) for item in line))
+            flat_log.append(self.delimiter.join(str(item) for item in line))
 
         return flat_log
 
@@ -284,7 +283,7 @@ class DocsParser(object):
 
     def get_images(self, image_ids, get_download_ext, file_choice):
         """
-        Retrives images using private API and image_ids
+        Retrieves images using private API and image_ids
         :param file_choice: gsuite.FileChoice object
         :param image_ids: Cosmo image IDs retrieved from a Google Docs log
         :param get_download_ext: Function which retrieves the proper image extension
@@ -318,6 +317,7 @@ class DocsParser(object):
         plain_text = self.pt_parser.get_plain_text(flat_log=flat_log)
         pt_obj = self.KumoObj(filename='plaintext.txt', content=plain_text.encode('utf-8'))
         return pt_obj
+
 
 class CommentsParser(object):
     """ Methods to recover comments from log"""
@@ -398,7 +398,7 @@ class ImageParser(object):
                                   'body={}'.format(render_url, request_body), error_level='debug')
         else:
             content = json.loads(content[5:])
-            # keep assocation of image ids with image
+            # keep association of image ids with image
             for i, img_id in enumerate(image_ids):
                 key = 'r' + str(i)
                 content[key] = (content.pop(key), img_id)
@@ -468,14 +468,14 @@ class DrawingsParser(object):
 class PlaintextParser(object):
     """ Methods to recover plain text from log """
 
-    def __init__(self):
-        pass
+    def __init__(self, delimiter='|'):
+        self.delimiter = delimiter
 
     def get_plain_text(self, flat_log):
         """ converts flat log to plaintext"""
         plain_text = ''
-        snapshot_line = 'chunkedSnapshot{}{}'.format(DELIMITER, '{}')
-        changelog_line = 'changelog{}{}'.format(DELIMITER, '{}')
+        snapshot_line = 'chunkedSnapshot{}{}'.format(self.delimiter, '{}')
+        changelog_line = 'changelog{}{}'.format(self.delimiter, '{}')
         log_dict = self.get_dict(flat_log[flat_log.index(snapshot_line) + 1])
 
         # should not contain a string if log starts at revision 1
