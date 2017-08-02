@@ -136,9 +136,7 @@ class SlidesParser(object):
 
         for line in (self.SlidesLine(entry) for entry in log['changelog']):
             if line.has_multiset() and line.has_insert_section():
-                slide_id = line.slide_id
-                image_id = line.image_id
-                image_ids[image_id] = slide_id
+                image_ids[line.image_id] = line.slide_id
 
         return image_ids
 
@@ -157,7 +155,7 @@ class SlidesParser(object):
 
     def get_images(self, image_ids, get_download_ext, file_choice):
         """
-        Retrives images using private API and image_ids
+        Retrieves images using private API and image_ids
         :param file_choice: gsuite.FileChoice object
         :param image_ids: Cosmo image IDs retrieved from a Google Docs log
         :param get_download_ext: Function which retrieves the proper image extension
