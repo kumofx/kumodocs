@@ -7,6 +7,10 @@ import KIOutils
 import basedriver
 import gapiclient
 import gsuite
+from gsuite.docsparser import DocsParser
+from gsuite.formsparser import FormsParser
+from gsuite.sheetsparser import SheetsParser
+from gsuite.slidesparser import SlidesParser
 
 
 class GSuiteDriver(basedriver.BaseDriver):
@@ -14,6 +18,10 @@ class GSuiteDriver(basedriver.BaseDriver):
     Functionality to retrieve and flattens Google Docs logs, and recover plain-text, suggestions, comments, 
     and images from the log.
     """
+
+    SERVICES = {'document': DocsParser, 'presentation': SlidesParser, 'drawing': SlidesParser,
+                'spreadsheet': SheetsParser,
+                'form': FormsParser}
 
     SuggestionContent = namedtuple('content', 'added, deleted')
 
@@ -54,22 +62,17 @@ class GSuiteDriver(basedriver.BaseDriver):
 
     def choose_file(self):
         """
-        Presents the user with a virtualized interface of their GSuite contents to choose a file.   
+        Presents the user with a virtualized interface of their GSuite contents to choose a file,
+        and initializes the appropriate parser for the given drive type.
         :return: A namedtuple containing file_id, title, drive, and max_revs
         """
         self.choice = self.client.choose_file()
-
-        if self.choice.drive == 'document':
-            from docsparser import DocsParser
-            self.parser = DocsParser(self.client, self.KumoObj)
-        elif self.choice.drive == 'presentation':
-            from slidesparser import SlidesParser
-            self.parser = SlidesParser(self.client, self.KumoObj)
-        elif self.choice.drive in gsuite.SERVICES:
-            from sheetsparser import SheetsParser
-            self.parser = SheetsParser(self.client, self.KumoObj)
-        else:
+        try:
+            file_parser = GSuiteDriver.SERVICES[self.choice.drive]
+        except KeyError:
             raise NotImplementedError('{} service not implemented'.format(self.choice.drive))
+        else:
+            self.parser = file_parser(self.client, self.KumoObj)
 
         return self.choice
 
@@ -80,18 +83,18 @@ class GSuiteDriver(basedriver.BaseDriver):
         """
         start, end = 0, 0
 
-        if self.choice.drive not in gsuite.SERVICES:
-            print('{} is not a supported service at this time')
+        if self.choice.drive not in GSuiteDriver.SERVICES:
             self.logger.debug('Unsupported service: {}'.format(self.choice.drive))
-            raise SystemExit
+            print('\n{} is not a supported service at this time'.format(self.choice.drive))
+            raise SystemExit('Unsupported service')
         elif self.choice.drive == 'document':
-            print('Please choose revision range\n')
+            print('\nPlease choose revision range\n')
             start = self._start_rev_range(start=start)
             end = self._end_rev_range(start=start, end=end)
         else:
             self.logger.debug('Non document drive - setting starting revision to 1')
             start = 1
-            print('Partial revisions for {} are not supported. Setting start = 1'.format(self.choice.drive))
+            print('\nPartial revisions for {} are not supported. Setting start = 1'.format(self.choice.drive))
             end = self._end_rev_range(start=start, end=end)
 
         self.choice_start, self.choice_end = start, end
@@ -105,7 +108,7 @@ class GSuiteDriver(basedriver.BaseDriver):
                 if start < 1 or start > self.choice.max_revs:
                     raise ValueError
             except ValueError:
-                print("invalid start revision choice\n")
+                print("Invalid start revision choice\n")
         return start
 
     def _end_rev_range(self, start, end):
@@ -116,8 +119,20 @@ class GSuiteDriver(basedriver.BaseDriver):
                 if end == 0 or end > self.choice.max_revs:
                     raise ValueError
             except ValueError:
-                print("invalid end revision choice\n")
+                print("Invalid end revision choice\n")
         return end
+
+    def log_headers(self):
+        """
+        Try to get any headers required for log retrieval.
+        :return: Headers from parser, none if not implemented
+        """
+        try:
+            headers = self.parser.log_headers()
+        except AttributeError:
+            headers = None
+
+        return headers
 
     def get_log(self, start, end, **kwargs):
         """
@@ -131,7 +146,7 @@ class GSuiteDriver(basedriver.BaseDriver):
         choice = kwargs.get('choice', self.choice)
         self.logger.info('Retrieving revision log')
         log_url = self.client.create_log_url(start=start, end=end, choice=choice)
-        response, log = self.client.request(url=log_url)
+        response, log = self.client.request(url=log_url, headers=self.log_headers())
         if log.startswith(gsuite.LOG_START_CHR):
             trimmed_log = log[len(gsuite.LOG_START_CHR):]
         else:
@@ -174,6 +189,3 @@ class GSuiteDriver(basedriver.BaseDriver):
             KIOutils.ensure_path(os.path.join(base_path, os.path.dirname(obj.filename)))
             self.write_object(obj, base_path)
 
-
-if __name__ == '__main__':
-    print('hi')
