@@ -66,7 +66,7 @@ class TestKIOutils(unittest.TestCase):
         tempdir = ''
         with KIOutils.temp_directory() as td:
             tempdir = td
-            filename = r'{}\{}'.format(td, 'temp.txt')
+            filename = os.path.join(tempdir, 'temp.txt')
             try:
                 with open(filename, 'w') as f:
                     f.write('msg')
