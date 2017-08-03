@@ -92,7 +92,7 @@ def ensure_path(path):
 
     try:
         os.makedirs(path)
-    except (OSError, WindowsError) as exception:
+    except (OSError, AttributeError) as exception:
         # if the directory exists or path is empty, ignore error
         if exception.errno != errno.EEXIST and exception.errno != errno.ENOENT:
             print exception.errno
