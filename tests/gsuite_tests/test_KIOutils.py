@@ -56,10 +56,11 @@ class TestKIOutils(unittest.TestCase):
         KIOutils.ensure_path('some/path/here')
         open('some/path/here/test1.txt', 'a').close()
         open('some/path/here/test2.txt', 'a').close()
-        KIOutils.remove_directory('some/path/here')
+        KIOutils.remove_directory('some/')
+	self.assertFalse(os.path.isdir('some/'))
         with self.assertRaises(IOError):
-            open('/some/path/here/test1.txt')
-            open('/some/path/here/test2.txt')
+            open('some/path/here/test1.txt')
+            open('some/path/here/test2.txt')
 
     def test_temp_directory(self):
         """ Assert temporary directory is writable, and successfully removed at end"""
