@@ -21,15 +21,22 @@ class ChromeDriver(object):
     CHROMEDRIVER_OS_URL = {
         'win32': 'https://chromedriver.storage.googleapis.com/{}/chromedriver_win32.zip',
         'darwin': 'https://chromedriver.storage.googleapis.com/{}/chromedriver_mac64.zip',
-        'linux2': 'https://chromedriver.storage.googleapis.com/{}/chromedriver_linux32.zip',
-        'linux': 'https://chromedriver.storage.googleapis.com/{}/chromedriver_linux32.zip'
+        'linux2': (
+            'https://chromedriver.storage.googleapis.com/{}/chromedriver_linux32.zip',
+            ['chmod', 'u+x', 'chromedriver']),
+        'linux': (
+            'https://chromedriver.storage.googleapis.com/{}/chromedriver_linux32.zip', ['chmod', 'u+x', 'chromedriver'])
     }
 
     def __init__(self):
         log_msg(self, msg='Starting the Chrome service', error_level='info')
         self.downloaded = False
-        self.chrome_path = os.path.abspath(os.path.join(KIOutils.kumo_working_directory(), 'chromedriver.exe'))
+        self.cmd = None
+        self.chrome_path = os.path.abspath(os.path.join(KIOutils.kumo_working_directory(), 'chromedriver'))
         self.driver = self.start_driver()
+        if self.cmd:
+            import subprocess
+            subprocess.Popen(self.cmd)
 
     def __enter__(self):
         return self.driver
@@ -42,12 +49,14 @@ class ChromeDriver(object):
                 self.downloaded = False
                 log_msg(self, msg='Chromedriver removed', error_level='info')
             except WindowsError:
-                log_msg(self, msg='Failed to remove chromedriver.exe', error_level='info')
+                log_msg(self, msg='Failed to remove chromedr', error_level='info')
 
     def download_chromedriver(self, path=KIOutils.kumo_working_directory(), attempts=3):
         os_url = self.get_url()
+        print "os url is", os_url
         while attempts:
             try:
+                log_msg(self, 'URL requested: {}'.format(os_url), 'debug')
                 r = requests.get(os_url, stream=True)
                 md5_hash = r.headers['ETag'][1:-1]
                 if hashlib.md5(r.content).hexdigest() != md5_hash:
@@ -70,7 +79,7 @@ class ChromeDriver(object):
 
     def get_url(self):
         try:
-            os_url = self.CHROMEDRIVER_OS_URL[sys.platform].format(self.latest_release())
+            os_url, self.cmd = self.CHROMEDRIVER_OS_URL[sys.platform].format(self.latest_release())
         except KeyError:
             log_msg(self, msg='Cannot find chromedriver for unknown OS type', error_level='exception')
             raise SystemExit('Unknown OS type: {}'.format(sys.platform))
@@ -78,7 +87,7 @@ class ChromeDriver(object):
         return os_url
 
     def find_chromedriver(self):
-        """ Looks in path, then in Kumo directory for chromedriver.exe """
+        """ Looks in path, then in Kumo directory for chromedriver """
         try:
             driver = webdriver.Chrome()
         except WebDriverException:
