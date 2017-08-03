@@ -18,15 +18,13 @@ class ChromeDriver(object):
     LOGIN_PAGE = 'https://accounts.google.com/signin/v2/identifier?flowName=GlifWebSignIn&flowEntry=ServiceLogin'
     LANDING_PAGE = 'https://myaccount.google.com/?pli=1'
     LATEST_RELEASE = 'https://chromedriver.storage.googleapis.com/LATEST_RELEASE'
-    CHROMEDRIVER_OS_URL = {
-        'win32': 'https://chromedriver.storage.googleapis.com/{}/chromedriver_win32.zip',
-        'darwin': 'https://chromedriver.storage.googleapis.com/{}/chromedriver_mac64.zip',
-        'linux2': (
-            'https://chromedriver.storage.googleapis.com/{}/chromedriver_linux32.zip',
-            ['chmod', 'u+x', 'chromedriver']),
-        'linux': (
-            'https://chromedriver.storage.googleapis.com/{}/chromedriver_linux32.zip', ['chmod', 'u+x', 'chromedriver'])
-    }
+    CHROMEDRIVER_OS_VALS = {
+        'win32': ('https://chromedriver.storage.googleapis.com/{}/chromedriver_win32.zip', None),
+        'darwin': ('https://chromedriver.storage.googleapis.com/{}/chromedriver_mac64.zip', None),
+        'linux2': ('https://chromedriver.storage.googleapis.com/{}/chromedriver_linux32.zip',
+                   ['chmod', 'u+x', 'chromedriver']),
+        'linux': ('https://chromedriver.storage.googleapis.com/{}/chromedriver_linux32.zip',
+                  ['chmod', 'u+x', 'chromedriver'])}
 
     def __init__(self):
         log_msg(self, msg='Starting the Chrome service', error_level='info')
@@ -79,7 +77,8 @@ class ChromeDriver(object):
 
     def get_url(self):
         try:
-            os_url, self.cmd = self.CHROMEDRIVER_OS_URL[sys.platform].format(self.latest_release())
+            os_url, self.cmd = self.CHROMEDRIVER_OS_VALS[sys.platform]
+            os_url = os_url.format(self.latest_release())
         except KeyError:
             log_msg(self, msg='Cannot find chromedriver for unknown OS type', error_level='exception')
             raise SystemExit('Unknown OS type: {}'.format(sys.platform))
