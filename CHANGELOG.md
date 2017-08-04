@@ -32,5 +32,3 @@
 ## Features
 
 -  Object retrieval from Google Docs
--  Changelog retrieval from Slides 
-- Refactored code into a modular approach for extension
