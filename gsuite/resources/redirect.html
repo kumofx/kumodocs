@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+body {background: rgb(239, 240, 241);}
+#outer {background: white; position: absolute; top: 40%; left: 50%; width: 600px; height: 200px; z-index:15; margin: -200px 0 0 -300px; border-spacing: 0px; padding-bottom: -10px;}
+#inner {background: white; padding-left: 20px; padding-top: 10px; padding-bottom:60px; border-style: outset;}
+#button {cursor: pointer; border: 0; background: transparent; position: absolute; right: 2.5%; bottom: 5%;}
+
+
+    </style>
+</head>
+<body>
+
+<div id="outer">
+    <div id="inner">
+        <h2>Kumodocs requires additional authorization to access Forms.
+        </h2>
+
+        <p>Click next to be redirected to Google's sign in page</p>
+
+        <button id="button" name="b2"
+                onclick="location.href='https://accounts.google.com/signin/v2/identifier?flowName=GlifWebSignIn&flowEntry=ServiceLogin'">
+            <img src="nextbutton.png"/>
+        </button>
+    </div>
+</div>
+</body>
+</html>
