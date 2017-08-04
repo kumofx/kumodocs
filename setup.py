@@ -11,7 +11,7 @@ setup(
     description='A tool for GSuite acquisition and analysis that can be easily extended through module creation '
                 'to other services. ',
     data_files=[('config', ['config/cfg', 'config/gdrive_config.json'])],
-    install_requires=['click', 'google-api-python-client==1.6.2', 'nose', 'requests'],
+    install_requires=['click', 'google-api-python-client==1.6.2', 'nose', 'requests', 'selenium'],
     entry_points='''
         [console_scripts]
         kumodocs=kumodocs:cli
