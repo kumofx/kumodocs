@@ -1,4 +1,5 @@
 import StringIO
+import fnmatch
 import hashlib
 import json
 import os
@@ -14,23 +15,28 @@ import KIOutils
 from gsuite import log_msg
 
 
+def default_chrome_path():
+    return os.path.abspath(os.path.join(KIOutils.kumo_working_directory(), 'chromedriver'))
+
+
 class ChromeDriver(object):
-    LOGIN_PAGE = 'https://accounts.google.com/signin/v2/identifier?flowName=GlifWebSignIn&flowEntry=ServiceLogin'
+    START_PAGE = 'file:///{}'.format(os.path.join(KIOutils.kumo_working_directory(), 'gsuite', 'resources',
+                                                  'redirect.html'))
     LANDING_PAGE = 'https://myaccount.google.com/?pli=1'
     LATEST_RELEASE = 'https://chromedriver.storage.googleapis.com/LATEST_RELEASE'
     CHROMEDRIVER_OS_VALS = {
-        'win32': ('https://chromedriver.storage.googleapis.com/{}/chromedriver_win32.zip', None),
-        'darwin': ('https://chromedriver.storage.googleapis.com/{}/chromedriver_mac64.zip', None),
-        'linux2': ('https://chromedriver.storage.googleapis.com/{}/chromedriver_linux32.zip',
+        'win32': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_win32.zip', None),
+        'darwin': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_mac64.zip', None),
+        'linux2': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_linux32.zip',
                    ['chmod', 'u+x', 'chromedriver']),
-        'linux': ('https://chromedriver.storage.googleapis.com/{}/chromedriver_linux32.zip',
+        'linux': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_linux32.zip',
                   ['chmod', 'u+x', 'chromedriver'])}
 
-    def __init__(self):
+    def __init__(self, chrome_path=default_chrome_path()):
         log_msg(self, msg='Starting the Chrome service', error_level='info')
         self.downloaded = False
         self.cmd = None
-        self.chrome_path = os.path.abspath(os.path.join(KIOutils.kumo_working_directory(), 'chromedriver'))
+        self.chrome_path = chrome_path
         self.driver = self.start_driver()
         if self.cmd:
             import subprocess
@@ -43,15 +49,21 @@ class ChromeDriver(object):
         self.driver.quit()
         if self.downloaded:
             try:
-                os.remove(self.chrome_path)
+                self.delete_chromedriver()
+            except OSError:
+                log_msg(self, msg='Failed to remove chromedrive', error_level='info')
+            else:
                 self.downloaded = False
                 log_msg(self, msg='Chromedriver removed', error_level='info')
-            except WindowsError:
-                log_msg(self, msg='Failed to remove chromedr', error_level='info')
+
+    def delete_chromedriver(self):
+        basepath = os.path.join(self.chrome_path, '..')
+        filenames = (os.path.join(basepath, f) for f in fnmatch.filter(os.listdir(basepath), 'chromedriver*'))
+        for f in filenames:
+            os.remove(f)
 
     def download_chromedriver(self, path=KIOutils.kumo_working_directory(), attempts=3):
         os_url = self.get_url()
-        print "os url is", os_url
         while attempts:
             try:
                 log_msg(self, 'URL requested: {}'.format(os_url), 'debug')
@@ -78,7 +90,7 @@ class ChromeDriver(object):
     def get_url(self):
         try:
             os_url, self.cmd = self.CHROMEDRIVER_OS_VALS[sys.platform]
-            os_url = os_url.format(self.latest_release())
+            os_url = os_url.format(ver=self.latest_release())
         except KeyError:
             log_msg(self, msg='Cannot find chromedriver for unknown OS type', error_level='exception')
             raise SystemExit('Unknown OS type: {}'.format(sys.platform))
@@ -98,7 +110,6 @@ class ChromeDriver(object):
 
     def start_driver(self):
         try:
-            sys.path.append(KIOutils.kumo_working_directory())
             driver = self.find_chromedriver()
         except WebDriverException:
             log_msg(self, msg='Unable to locate chromedriver', error_level='error')
@@ -149,7 +160,7 @@ class FormsParser(object):
 
     def get_cookies(self):
         with ChromeDriver() as driver:
-            driver.get(ChromeDriver.LOGIN_PAGE)
+            driver.get(ChromeDriver.START_PAGE)
             log_msg(self, 'Waiting for authorization... check Chrome page', 'info')
             while driver.current_url != ChromeDriver.LANDING_PAGE:
                 time.sleep(0.1)
