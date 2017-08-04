@@ -25,4 +25,12 @@
 
 ## Bug fixes
 
-- Fixes major issue with rejected requests for image retrieval. 
+- Fixes major issue with rejected requests for image retrieval. <br><br><br>
+
+# 0.1 (2017-04-20)
+
+## Features
+
+-  Object retrieval from Google Docs
+-  Changelog retrieval from Slides 
+- Refactored code into a modular approach for extension
