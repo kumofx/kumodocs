@@ -89,7 +89,6 @@ class ChromeDriver(object):
         if self.cmd:
             subprocess.Popen(self.cmd)
 
-
     def latest_release(self):
         return float(requests.get(self.LATEST_RELEASE).text)
 
