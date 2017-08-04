@@ -3,6 +3,8 @@ import fnmatch
 import hashlib
 import json
 import os
+import platform
+import subprocess
 import sys
 import time
 import zipfile
@@ -25,24 +27,21 @@ class ChromeDriver(object):
     LANDING_PAGE = 'https://myaccount.google.com/?pli=1'
     LATEST_RELEASE = 'https://chromedriver.storage.googleapis.com/LATEST_RELEASE'
     CHROMEDRIVER_OS_VALS = {
-        'win32': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_win32.zip', None),
+        'Windows32': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_win32.zip', None),
         'darwin': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_mac64.zip', None),
-        'linux2': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_linux32.zip',
-                   ['chmod', 'u+x', 'chromedriver']),
-        'linux': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_linux32.zip',
-                  ['chmod', 'u+x', 'chromedriver'])}
+        'Linux64': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_linux64.zip',
+                    ['chmod', 'u+x', 'chromedriver']),
+        'Linux32': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_linux32.zip',
+                    ['chmod', 'u+x', 'chromedriver'])}
 
     def __init__(self, chrome_path=default_chrome_path()):
         log_msg(self, msg='Starting the Chrome service', error_level='info')
         self.downloaded = False
         self.cmd = None
         self.chrome_path = chrome_path
-        self.driver = self.start_driver()
-        if self.cmd:
-            import subprocess
-            subprocess.Popen(self.cmd)
 
     def __enter__(self):
+        self.driver = self.start_driver()
         return self.driver
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -57,10 +56,13 @@ class ChromeDriver(object):
                 log_msg(self, msg='Chromedriver removed', error_level='info')
 
     def delete_chromedriver(self):
-        basepath = os.path.join(self.chrome_path, '..')
+        basepath = os.path.abspath(os.path.join(self.chrome_path, '..'))
         filenames = (os.path.join(basepath, f) for f in fnmatch.filter(os.listdir(basepath), 'chromedriver*'))
         for f in filenames:
             os.remove(f)
+
+    def get_architecture(self):
+        return '{os}{bits}'.format(os=platform.system(), bits=64 if sys.maxsize > 2 ** 32 else 32)
 
     def download_chromedriver(self, path=KIOutils.kumo_working_directory(), attempts=3):
         os_url = self.get_url()
@@ -84,12 +86,16 @@ class ChromeDriver(object):
         if not self.downloaded:
             raise SystemExit('Could not download chromedriver.')
 
+        if self.cmd:
+            subprocess.Popen(self.cmd)
+
+
     def latest_release(self):
         return float(requests.get(self.LATEST_RELEASE).text)
 
     def get_url(self):
         try:
-            os_url, self.cmd = self.CHROMEDRIVER_OS_VALS[sys.platform]
+            os_url, self.cmd = self.CHROMEDRIVER_OS_VALS[self.get_architecture()]
             os_url = os_url.format(ver=self.latest_release())
         except KeyError:
             log_msg(self, msg='Cannot find chromedriver for unknown OS type', error_level='exception')
@@ -117,7 +123,16 @@ class ChromeDriver(object):
             download = raw_input('\nNo chrome driver found.  Download? (y/n): ')
             if download.lower().startswith('y'):
                 self.download_chromedriver()
-                driver = webdriver.Chrome(executable_path=self.chrome_path)
+                try:
+                    driver = webdriver.Chrome(executable_path=self.chrome_path)
+                except WebDriverException as e:
+                    if 'cannot find' in e.msg:
+                        log_msg(self, 'Could not start Chrome browser', 'critical')
+                        raise SystemExit('Forms log cannot be retrieved without Chrome and chromedriver.')
+                    else:
+                        log_msg(self, 'Cannot start the Chrome browser', 'exception')
+                        raise SystemExit('Forms log cannot be retrieved without Chrome and chromedriver.')
+
             else:
                 raise SystemExit('Forms log cannot be retrieved without Chrome and chromedriver.')
 
