@@ -2,6 +2,8 @@ import json
 import urllib
 from collections import OrderedDict, namedtuple
 
+import itertools
+
 import gsuite
 import mappings
 
@@ -27,6 +29,7 @@ def delete(old_string, starting_index, ending_index):
 class DocsParser(object):
     Suggestion = namedtuple('Suggestion', 'start, end, sug_id, content deleted')
 
+    PARSERS = [CommentsParser, SuggestionParser, ImageParser, DrawingsParser, PlaintextParser]
     # Drawing = namedtuple('Drawing', 'd_id width height')
 
     def __init__(self, client, kumo_obj, delimiter='|'):
@@ -38,17 +41,21 @@ class DocsParser(object):
         self.KumoObj = kumo_obj
 
         # parsers TODO: refactor to list that executes each using self.flat_log
-        self.comments_parser = CommentsParser(self.service)
-        self.suggestion_parser = SuggestionParser(self.service)
-        self.image_parser = ImageParser(self.service)
-        self.drawing_parser = DrawingsParser(self.service)
-        self.pt_parser = PlaintextParser()
+        self.parsers = [p(self.service) for p in DocsParser.PARSERS]
+        # self.comments_parser = CommentsParser(self.service)
+        # self.suggestion_parser = SuggestionParser(self.service)
+        # self.image_parser = ImageParser(self.service)
+        # self.drawing_parser = DrawingsParser(self.service)
+        # self.pt_parser = PlaintextParser()
 
     def recover_objects(self, log, flat_log, choice):
         """ Recovers plain text, comments, images, drawings, and suggestions from flat_log. 
         :return: A list of recovered objects as KumoObj
         """
         objects = []
+        # objects = list(itertools.chain.from_iterable(p.parse() for p in self.parsers))
+        # Move parser init to driver.recover_objects and init with logs? (and all subparsers)
+        # map(objects.extend, p.parse() for p in self.parsers)
         image_ids, drawing_ids, suggestions = self.get_doc_objects(flat_log=flat_log)
 
         objects.append(self.KumoObj(filename='revision-log.txt', content=self.stringify(log)))
@@ -468,7 +475,8 @@ class DrawingsParser(object):
 class PlaintextParser(object):
     """ Methods to recover plain text from log """
 
-    def __init__(self, delimiter='|'):
+    def __init__(self, service, delimiter='|'):
+        self.service = service
         self.delimiter = delimiter
 
     def get_plain_text(self, flat_log):
