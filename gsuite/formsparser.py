@@ -27,7 +27,7 @@ class ChromeDriver(object):
     LANDING_PAGE = 'https://myaccount.google.com/?pli=1'
     LATEST_RELEASE = 'https://chromedriver.storage.googleapis.com/LATEST_RELEASE'
     CHROMEDRIVER_OS_VALS = {
-        'win32': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_win32.zip', None),
+        'Windows32': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_win32.zip', None),
         'darwin': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_mac64.zip', None),
         'Linux64': ('https://chromedriver.storage.googleapis.com/{ver}/chromedriver_linux64.zip',
                     ['chmod', 'u+x', 'chromedriver']),
@@ -123,7 +123,15 @@ class ChromeDriver(object):
             download = raw_input('\nNo chrome driver found.  Download? (y/n): ')
             if download.lower().startswith('y'):
                 self.download_chromedriver()
-                driver = webdriver.Chrome(executable_path=self.chrome_path)
+                try:
+                    driver = webdriver.Chrome(executable_path=self.chrome_path)
+                except WebDriverException as e:
+                    if 'cannot find' in e.msg:
+                        log_msg(self, 'Could not start Chrome browser', 'critical')
+                        raise SystemExit('Forms log cannot be retrieved without Chrome and chromedriver.')
+                    else:
+                        log_msg(self, 'Cannot start the Chrome browser', 'exception')
+
             else:
                 raise SystemExit('Forms log cannot be retrieved without Chrome and chromedriver.')
 
