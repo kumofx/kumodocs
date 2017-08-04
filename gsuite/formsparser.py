@@ -39,9 +39,9 @@ class ChromeDriver(object):
         self.downloaded = False
         self.cmd = None
         self.chrome_path = chrome_path
-        self.driver = self.start_driver()
 
     def __enter__(self):
+        self.driver = self.start_driver()
         return self.driver
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -131,6 +131,7 @@ class ChromeDriver(object):
                         raise SystemExit('Forms log cannot be retrieved without Chrome and chromedriver.')
                     else:
                         log_msg(self, 'Cannot start the Chrome browser', 'exception')
+                        raise SystemExit('Forms log cannot be retrieved without Chrome and chromedriver.')
 
             else:
                 raise SystemExit('Forms log cannot be retrieved without Chrome and chromedriver.')
