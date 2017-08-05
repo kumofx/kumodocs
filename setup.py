@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='Kumodocs',
-    version='0.3',
+    version='0.4',
     packages=['', 'gsuite'],
     url='https://github.com/kumofx/kumodocs',
     license='Apache License 2.0',
