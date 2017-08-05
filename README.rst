@@ -8,7 +8,7 @@ These artifacts have no presence on the local machine.
 In GSuite collaboration services, these cloud natives have the form of append-only logs that track each minor change to a document.
 Kumodocs processes these logs to retrieve comments, suggestions, plain-text, drawings, and deleted images for any given revision.
 
-Kumodocs currently supports object retrieval from Docs and Slides, with log/comment retrieval from Sheets and Drawings.
+Kumodocs currently supports object retrieval from Docs and Slides, with log/comment retrieval from Sheets and Drawings, and log retrieval from Forms. 
 Google drive contents are retrieved and the user is prompted to choose a file. 
 The revision log for that file is obtained and processed for the artifacts mentioned above. 
 
@@ -54,10 +54,11 @@ To find your project's client ID and client secret, do the following:
 
 The recommended method of installation is to create a virtual environment using the virtualenv python package ::
 
+$ git clone https://github.com/kumofx/kumodocs
 $ cd kumodocs
 $ virtualenv kumodocs
 
-Currently, kumodocs requires tkinter.  This must be installed on linux separately; for distributions with apt, this
+Currently, kumodocs requires tkinter.  For Linux, this requires installing Tcl/Tk; for distributions with apt, this
 will install the necessary files: ::
 
 $ sudo apt install python-tk
@@ -93,13 +94,6 @@ If packages are locally installed:
 
    python kumodocs.py -h, --help
 
-
-
-
-Known Limitations and Issues
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-- Forms module is not implemented yet.
 
 
 Contact Information
