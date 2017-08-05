@@ -8,10 +8,10 @@
 
 
 ## Bug fixes
-- Fixes flag issue for oauth flow 
-- Start/end range issues
+- Fixes flag issue for oauth flow ( #6 )
+- Start/end range issues ( #5, #29 )
 - Adds missing nextPageToken for large results
-- Only files with edit permission will be returned from listing  <br><br><br>
+- Only files with edit permission will be returned from listing( #2 )  <br><br><br>
 
 
 
