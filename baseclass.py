@@ -1,12 +1,19 @@
+import inspect
 import itertools
 import json
-import logging
 import os
+import sys
 from abc import abstractmethod, ABCMeta, abstractproperty
 # noinspection PyClassHasNoInit
 from collections import namedtuple
 
 import gsuite
+
+
+def is_parser(item):
+    """ Finds all parsers in the current module that are not Parser """
+    name, cls = item
+    return inspect.isclass(cls) and name.endswith('Parser') and cls is not Parser
 
 
 class Driver(object):
@@ -19,12 +26,10 @@ class Driver(object):
         :return: logger property
         :rtype: Instance of logging.Logger
         """
-        pass
 
     @logger.setter
     def logger(self, value):
         """ Defines a basic setter for logger property """
-        pass
 
     @abstractproperty
     def base_dir(self):  # type: () -> str
@@ -33,12 +38,10 @@ class Driver(object):
         working directory. 
         :return: base_directory as absolute or relative path
         """
-        pass
 
     @base_dir.setter
     def base_dir(self, value):
         """ Defines a basic setter for base_dir property """
-        pass
 
     @abstractmethod
     def get_log(self, start, end, **kwargs):
@@ -50,7 +53,6 @@ class Driver(object):
         path, etc)
         :return: unparsed(native) revision log 
         """
-        pass
 
     @abstractmethod
     def flatten_log(self, log):
@@ -59,7 +61,6 @@ class Driver(object):
         :param log: Native revision log from some service
         :return: Flattened log in the common log format.  
         """
-        pass
 
     @abstractmethod
     def recover_objects(self, log, flat_log, choice):
@@ -71,7 +72,6 @@ class Driver(object):
         :param choice:  contains necessary file metadata to process
         :return: None; outputs all recovered objects to the location specified by self.write_object
         """
-        pass
 
     @abstractmethod
     def choose_file(self):
@@ -81,7 +81,6 @@ class Driver(object):
         and revisions available.  
         :rtype: A namedtuple containing all necessary information (to be sent to get_log as **kwargs)
         """
-        pass
 
     @abstractmethod
     def prompt_rev_range(self):
@@ -114,12 +113,16 @@ class Driver(object):
 
 class Parser(object):
     """ Specific parsers implement parse() and return a list of KumoObj """
+    __metaclass__ = ABCMeta
 
     def __init__(self, service, delimiter='|'):
         self.KumoObj = Handler.KumoObj
         self.service = service
-        self.logger = logging.getLogger(__name__)
         self.delimiter = delimiter
+
+    @abstractproperty
+    def logger(self):
+        """ Local logger object"""
 
     @abstractmethod
     def parse(self, log, flat_log, choice, **kwargs):
@@ -130,10 +133,22 @@ class Parser(object):
         :param choice: Package-level constant that encapsulates info necessary to parse
         :return: List of KumoObj retrieved from logs
         """
-        pass
 
 
 class Handler(object):
+    """  Base class for service handlers to inherit.  Any Handler that inherits from this base class should add the
+    following to init:
+
+        self._parsers = [self.init_parser(p) for p in parsers or self.collect_parsers(__name__)]
+
+    This will gather any classes defined in the module as xxxxParser as well as any imports
+    that match this pattern """
+
+    MESSAGE = """\n\nself._parsers = [self.init_parser(p) for p in parsers or self.collect_parsers(__name__)]
+
+    This will gather any classes defined in the module as xxxxParser as well as any imports
+    that match this pattern """
+
     __metaclass__ = ABCMeta
 
     DELIMITER = '|'
@@ -145,7 +160,6 @@ class Handler(object):
         """
 
         # iter(KumoObj) returns 1 instance of self instead of field members
-
         @property
         def iter_count(self):
             return self._iter_count
@@ -166,30 +180,74 @@ class Handler(object):
                 raise StopIteration
 
     @abstractproperty
-    def client(self):
-        """ GAPIClient object to facilitate API calls """
-        pass
-
-    @abstractproperty
-    def delimiter(self):
-        """ Default delimiter is generally set as '|' """
-        pass
-
-    @abstractproperty
-    def parsers(self):  # type: () -> list
-        """ Returns a list of available parsers """
-        pass
-
-    @abstractproperty
     def logger(self):
-        pass
+        """ Local logger """
+
+    @abstractproperty
+    def parsers(self):  # type:  () -> list
+        """ List of parser instances retrieved during __init__ """
 
     def __init__(self, client, delimiter=None):
-        self._client = client
-        self._delimiter = delimiter or Handler.DELIMITER
-        self._logger = logging.getLogger(__name__)
-        self.KumoObj = Handler.KumoObj
+        """ Initializes the handler with client object and optional delimiter, default '|'.  Subclasses should
+        implement __init__ with super() and call
+
+            self._parsers = [self.init_parser(p) for p in parsers or self.collect_parsers(__name__)]
+
+        This will gather any classes defined in the module as xxxxParser as well as any imports
+        that match this pattern  """
+
+        self.client = client
+        self.delimiter = delimiter or self.DELIMITER
         self.parser_opt_args = {}
+
+    # override for service-specific implementation
+    def parser_opts(self, log, flat_log, choice):  # type: (dict, str, gsuite.FileChoice) -> dict
+        """ Override to provide extra args to parsers """
+        return {}
+
+    def parse_log(self, log):
+        """
+        Override with service-specific requirements
+        :return: Must return a list of lines parsed from self.log
+        """
+        return []
+
+    def parse_snapshot(self, log):
+        """ Override with service-specific requirements
+        :return: Must return a list of lines parsed from self.log
+        """
+        return []
+
+    @staticmethod
+    def stringify(log):
+        """ Returns log in a writable form.  May be overridden for customization"""
+        return json.dumps(log, indent=1)
+
+    class FlatParser(Parser):
+        """ Converts flat_log to a KumoObj for writing"""
+
+        def parse(self, log, flat_log, choice, **kwargs):
+            if flat_log:
+                filename = 'flat_log.txt'
+                content = '\n'.join(str(line) for line in flat_log)
+                return [self.KumoObj(filename=filename, content=content)]
+            else:
+                return []
+
+    class LogParser(Parser):
+        """ Converts log to a KumoObj for writing"""
+
+        def parse(self, log, flat_log, choice, **kwargs):
+            filename = 'revision-log.txt'
+            content = Handler.stringify(log)
+            return [self.KumoObj(filename=filename, content=content)]
+
+    # common methods
+    def collect_parsers(self, mod_name):
+        """ Collects any class ending in `Parser` as well as self.LogParser and self.FlatParser"""
+        p = [self.LogParser, self.FlatParser]
+        p.extend(cls for name, cls in filter(is_parser, inspect.getmembers(sys.modules[mod_name])))
+        return p
 
     def flatten_log(self, log):
         """
@@ -218,44 +276,3 @@ class Handler(object):
         objects = list(itertools.chain.from_iterable(p.parse(log, flat_log, choice, **opt_args) for p in self.parsers))
 
         return objects
-
-    def parser_opts(self, log, flat_log, choice):  # type: (dict, str, gsuite.FileChoice) -> dict
-        """ Override to provide extra args to parsers """
-        pass
-
-    def parse_log(self, log):
-        """
-        Override with service-specific requirements
-        :return: Must return a list of lines parsed from self.log
-        """
-        return []
-
-    def parse_snapshot(self, log):
-        """ Override with service-specific requirements
-        :return: Must return a list of lines parsed from self.log
-        """
-        return []
-
-    class FlatParser(Parser):
-        """ Converts flat_log to a KumoObj for writing"""
-
-        def parse(self, log, flat_log, choice, **kwargs):
-            if flat_log:
-                filename = 'flat_log.txt'
-                content = '\n'.join(str(line) for line in flat_log)
-                return [self.KumoObj(filename=filename, content=content)]
-            else:
-                return []
-
-    class LogParser(Parser):
-        """ Converts log to a KumoObj for writing"""
-
-        def parse(self, log, flat_log, choice, **kwargs):
-            filename = 'revision-log.txt'
-            content = self.stringify(log)
-            return [self.KumoObj(filename=filename, content=content)]
-
-        @staticmethod
-        def stringify(log):
-            """ Returns log in a writable form.  May be overridden for customization"""
-            return json.dumps(log, indent=1)
