@@ -226,6 +226,10 @@ class Handler(object):
     class FlatParser(Parser):
         """ Converts flat_log to a KumoObj for writing"""
 
+        @property
+        def logger(self):
+            return None
+
         def parse(self, log, flat_log, choice, **kwargs):
             if flat_log:
                 filename = 'flat_log.txt'
@@ -236,6 +240,10 @@ class Handler(object):
 
     class LogParser(Parser):
         """ Converts log to a KumoObj for writing"""
+
+        @property
+        def logger(self):
+            return None
 
         def parse(self, log, flat_log, choice, **kwargs):
             filename = 'revision-log.txt'
