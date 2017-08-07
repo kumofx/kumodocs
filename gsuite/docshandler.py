@@ -118,7 +118,7 @@ def rm_sugg_text(line_dict, suggestion):
                                   content=new_content, deleted=suggestion.deleted)
 
 
-def find_sugg_by_index(line_dict, suggestions, logger):
+def find_sugg_by_index(line_dict, suggestions):
     """ Searches for Suggestion that contains start_index in its [start,end] range """
     suggestion = [s for s in suggestions.values() if s.start <= line_dict['start_index'] <= s.end]
     if len(suggestion) == 1:
@@ -312,7 +312,7 @@ class DocsHandler(Handler):
                         else:
                             suggestions[sug_id] = new_suggestion(line_dict)
                     elif is_delete_suggestion(line_dict):
-                        suggestion = find_sugg_by_index(line_dict, suggestions, logger)
+                        suggestion = find_sugg_by_index(line_dict, suggestions)
                         if suggestion:
                             suggestions[suggestion.sug_id] = rm_sugg_text(line_dict, suggestion)
 
@@ -323,8 +323,12 @@ class DocsHandler(Handler):
 class CommentsParser(Parser):
     """ Methods to recover comments from log"""
 
+    @property
+    def logger(self):
+        return logger
+
     def parse(self, log, flat_log, choice, **kwargs):
-        logger.info('Retrieving comments')
+        self.logger.info('Retrieving comments')
         comments = '\n'.join(str(line) for line in self.get_comments(choice.file_id))
         comment_obj = self.KumoObj(filename='comments.txt', content=comments)
         return comment_obj
@@ -381,12 +385,16 @@ class CommentsParser(Parser):
 class ImageParser(Parser):
     """ Methods to recover images from log """
 
+    @property
+    def logger(self):
+        return logger
+
     # TODO refactor api logic to gapiclient
     Image = namedtuple('Image', 'content extension img_id')
 
     def parse(self, log, flat_log, choice, **kwargs):
         image_ids = kwargs.get('image_ids')
-        logger.info('Retrieving images')
+        self.logger.info('Retrieving images')
         images = self.get_images(image_ids=image_ids, file_id=choice.file_id,
                                  drive=choice.drive)
 
@@ -406,7 +414,7 @@ class ImageParser(Parser):
             try:
                 response, content = self.service.http.request(url)
             except:
-                logger.debug('Image could not be retrieved:\n\turl={}\n\t img_id={}'.format(url, img_id))
+                self.logger.debug('Image could not be retrieved:\n\turl={}\n\t img_id={}'.format(url, img_id))
             else:
                 extension = get_download_ext(response)
                 img = self.Image(content, extension, img_id)
@@ -423,7 +431,7 @@ class ImageParser(Parser):
             response, content = self.service.http.request(render_url, method='POST',
                                                           body=request_body, headers=my_headers)
         except:
-            logger.debug(
+            self.logger.debug(
                 'Renderdata url cannot be resolved:\n\trender_url={}\n\t body={}'.format(render_url, request_body))
         else:
             content = json.loads(content[5:])
@@ -461,6 +469,10 @@ class ImageParser(Parser):
 class SuggestionParser(Parser):
     """ Methods to recover suggestions from log """
 
+    @property
+    def logger(self):
+        return logger
+
     def parse(self, log, flat_log, choice, **kwargs):
         """ Suggestions are recovered in `DocsHandler.get_doc_objects` """
         suggestions = kwargs.get('suggestions', [])
@@ -470,10 +482,14 @@ class SuggestionParser(Parser):
 class DrawingsParser(Parser):
     """ Methods to recover drawings from log """
 
+    @property
+    def logger(self):
+        return logger
+
     Drawing = namedtuple('Drawing', 'content extension')
 
     def parse(self, log, flat_log, choice, **kwargs):
-        logger.info('Retrieving drawings')
+        self.logger.info('Retrieving drawings')
         drawing_ids = kwargs.get('drawing_ids')
         drawings = self.get_drawings(drawing_ids=drawing_ids, drive='Drawing')
 
@@ -503,8 +519,12 @@ class DrawingsParser(Parser):
 class PlaintextParser(Parser):
     """ Methods to recover plain text from log """
 
+    @property
+    def logger(self):
+        return logger
+
     def parse(self, log, flat_log, choice, **kwargs):
-        logger.info('Recovering plain text')
+        self.logger.info('Recovering plain text')
         plain_text = self.get_plain_text(flat_log=flat_log)
         pt_obj = self.KumoObj(filename='plaintext.txt', content=plain_text.encode('utf-8'))
         return [pt_obj]
