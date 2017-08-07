@@ -28,7 +28,7 @@ class TestDelete:
 # noinspection PyClassHasNoInit
 class TestDocsParser:
     def test___init__(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         raise SkipTest  # TODO: implement your test here
 
     def test_recover_objects(self):
@@ -46,117 +46,117 @@ class TestDocsParser:
         check_recover_objects(driver)
 
     def test_create_obj_list(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.create_obj_list(objects, type_))
         raise SkipTest  # TODO: implement your test here
 
     def test_find_sugg_by_index(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.find_sugg_by_index(line_dict, suggestions))
         raise SkipTest  # TODO: implement your test here
 
     def test_flatten_mts(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.flatten_mts(entry, line_copy, line))
         raise SkipTest  # TODO: implement your test here
 
     def test_get_comments(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.get_comments(file_choice))
         raise SkipTest  # TODO: implement your test here
 
     def test_get_doc_objects(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.get_doc_objects(flat_log))
         raise SkipTest  # TODO: implement your test here
 
     def test_get_drawings(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.get_drawings(drawing_ids, drive, get_download_ext))
         raise SkipTest  # TODO: implement your test here
 
     def test_get_images(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.get_images(image_ids, get_download_ext, file_choice))
         raise SkipTest  # TODO: implement your test here
 
     def test_get_log(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.get_log(start, end, choice))
         raise SkipTest  # TODO: implement your test here
 
     def test_get_plain_text(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.get_plain_text(flat_log))
         raise SkipTest  # TODO: implement your test here
 
     def test_get_snapshot_line(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.get_snapshot_line(snapshot_entry))
         raise SkipTest  # TODO: implement your test here
 
     def test_has_drawing(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.has_drawing(elem_dict, drawing_ids))
         raise SkipTest  # TODO: implement your test here
 
     def test_has_element(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.has_element(line_dict))
         raise SkipTest  # TODO: implement your test here
 
     def test_has_img(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.has_img(elem_dict))
         raise SkipTest  # TODO: implement your test here
 
     def test_ins_sugg_text(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.ins_sugg_text(line_dict, old_sugg))
         raise SkipTest  # TODO: implement your test here
 
     def test_is_delete_suggestion(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.is_delete_suggestion(line_dict))
         raise SkipTest  # TODO: implement your test here
 
     def test_is_insert_suggestion(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.is_insert_suggestion(line_dict))
         raise SkipTest  # TODO: implement your test here
 
     def test_new_drawing(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.new_drawing(elem_dict))
         raise SkipTest  # TODO: implement your test here
 
     def test_new_suggestion(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.new_suggestion(line_dict))
         raise SkipTest  # TODO: implement your test here
 
     def test_parse_log(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.parse_log(c_log))
         raise SkipTest  # TODO: implement your test here
 
     def test_parse_snapshot(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.parse_snapshot(snapshot))
         raise SkipTest  # TODO: implement your test here
 
     def test_rename_keys(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.rename_keys(log_dict))
         raise SkipTest  # TODO: implement your test here
 
     def test_rm_sugg_text(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.rm_sugg_text(line_dict, suggestion))
         raise SkipTest  # TODO: implement your test here
 
     def test_stringify(self):
-        # docs_parser = DocsParser(client, KumoObj, delimiter)
+        # docs_parser = DocsHandler(client, KumoObj, delimiter)
         # assert_equal(expected, docs_parser.stringify(log))
         raise SkipTest  # TODO: implement your test here
 
