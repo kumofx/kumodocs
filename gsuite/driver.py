@@ -4,24 +4,24 @@ import os
 from collections import namedtuple
 
 import KIOutils
-import basedriver
 import gapiclient
 import gsuite
-from gsuite.docsparser import DocsParser
-from gsuite.formsparser import FormsParser
-from gsuite.sheetsparser import SheetsParser
-from gsuite.slidesparser import SlidesParser
+from baseclass import Driver
+from gsuite.docshandler import DocsHandler
+from gsuite.formshandler import FormsHandler
+from gsuite.sheetshandler import SheetsHandler
+from gsuite.slideshandler import SlidesHandler
 
 
-class GSuiteDriver(basedriver.BaseDriver):
+class GSuiteDriver(Driver):
     """ 
     Functionality to retrieve and flattens Google Docs logs, and recover plain-text, suggestions, comments, 
     and images from the log.
     """
 
-    SERVICES = {'document': DocsParser, 'presentation': SlidesParser, 'drawing': SlidesParser,
-                'spreadsheet': SheetsParser,
-                'form': FormsParser}
+    SERVICES = {'document': DocsHandler, 'presentation': SlidesHandler, 'drawing': SheetsHandler,
+                'spreadsheet': SheetsHandler,
+                'form': FormsHandler}
 
     SuggestionContent = namedtuple('content', 'added, deleted')
 
@@ -35,6 +35,19 @@ class GSuiteDriver(basedriver.BaseDriver):
         self._parser = parser
         self.choice_start = None
         self.choice_end = None
+
+    def init_parser(self, choice=None):
+        """ Initializes the correct parser for the given choice"""
+        choice = choice or self.choice
+
+        try:
+            service_parser = GSuiteDriver.SERVICES[choice.drive]
+        except KeyError:
+            raise NotImplementedError('{} service not implemented'.format(choice.drive))
+        else:
+            parser = service_parser(self.client)
+
+        return parser
 
     @property
     def logger(self):
@@ -67,12 +80,6 @@ class GSuiteDriver(basedriver.BaseDriver):
         :return: A namedtuple containing file_id, title, drive, and max_revs
         """
         self.choice = self.client.choose_file()
-        try:
-            file_parser = GSuiteDriver.SERVICES[self.choice.drive]
-        except KeyError:
-            raise NotImplementedError('{} service not implemented'.format(self.choice.drive))
-        else:
-            self.parser = file_parser(self.client, self.KumoObj)
 
         return self.choice
 
@@ -127,10 +134,14 @@ class GSuiteDriver(basedriver.BaseDriver):
         Try to get any headers required for log retrieval.
         :return: Headers from parser, none if not implemented
         """
-        try:
-            headers = self.parser.log_headers()
-        except AttributeError:
-            headers = None
+        header_func = getattr(self.parser, 'log_headers', None)
+        headers = None
+        if header_func:
+            try:
+                headers = self.parser.log_headers()
+            except BaseException as e:
+                self.logger.exception(e)
+                raise
 
         return headers
 
@@ -143,8 +154,9 @@ class GSuiteDriver(basedriver.BaseDriver):
         :return: Native revision log
         """
 
-        choice = kwargs.get('choice', self.choice)
         self.logger.info('Retrieving revision log')
+        choice = kwargs.get('choice', self.choice)
+        self.parser = self.init_parser()
         log_url = self.client.create_log_url(start=start, end=end, choice=choice)
         response, log = self.client.request(url=log_url, headers=self.log_headers())
         if log.startswith(gsuite.LOG_START_CHR):
@@ -156,20 +168,20 @@ class GSuiteDriver(basedriver.BaseDriver):
         return json.loads(trimmed_log)
 
     def flatten_log(self, log):
-        """Splits into snapshot and changelog, parses each, and returns flat log"""
-        flat_log = []
+        """ Initializes proper parser which converts revision log into flat_log """
 
-        try:
-            flat_log.extend(self.parser.parse_snapshot(log['chunkedSnapshot']))
-            flat_log.extend(self.parser.parse_log(log['changelog']))
-        except KeyError:
-            self.logger.exception('Missing chunkedSnapshot or changelog keys in log')
-            raise
-
-        return flat_log
+        return self.parser.flatten_log(log)
 
     def recover_objects(self, log, flat_log, choice):
-        return self.parser.recover_objects(log, flat_log, choice)
+        """
+        Runs available parsers to recover any objects
+        :param log: Raw revision log
+        :param flat_log: Flattened revision log
+        :param choice: gsuite.FileChoice representing choice
+        :return:
+        """
+
+        return self.parser.recover_objects(log=log, flat_log=flat_log, choice=choice)
 
     def make_base_path(self):
         revision_range = '{start}-{end}'.format(start=self.choice_start, end=self.choice_end)
