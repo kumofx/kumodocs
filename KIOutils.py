@@ -139,7 +139,7 @@ def block_hash_file(f, block_size=2 ** 13, h_alg='md5'):
     try:
         m = getattr(hashlib, h_alg)()
     except AttributeError:
-        raise
+        raise SystemExit('Hash not in hashlib.py')
 
     while True:
         data = f.read(block_size)
