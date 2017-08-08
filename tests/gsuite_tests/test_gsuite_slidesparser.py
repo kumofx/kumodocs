@@ -11,6 +11,7 @@ class TestDrawingsParser:
         driver = get_driver('drawing')
         check_recover_objects(driver)
 
+
 # noinspection PyClassHasNoInit
 class TestSlidesParser:
     def test___init__(self):

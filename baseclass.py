@@ -115,9 +115,9 @@ class Parser(object):
     """ Specific parsers implement parse() and return a list of KumoObj """
     __metaclass__ = ABCMeta
 
-    def __init__(self, service, delimiter='|'):
+    def __init__(self, client, delimiter='|'):
         self.KumoObj = Handler.KumoObj
-        self.service = service
+        self.client = client
         self.delimiter = delimiter
 
     @abstractproperty
@@ -164,6 +164,7 @@ class Handler(object):
         def iter_count(self):
             return self._iter_count
 
+        # noinspection PyAttributeOutsideInit
         @iter_count.setter
         def iter_count(self, value):
             self._iter_count = value

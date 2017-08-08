@@ -158,12 +158,18 @@ class GSuiteDriver(Driver):
         choice = kwargs.get('choice', self.choice)
         self.parser = self.init_parser()
         log_url = self.client.create_log_url(start=start, end=end, choice=choice)
-        response, log = self.client.request(url=log_url, headers=self.log_headers())
-        if log.startswith(gsuite.LOG_START_CHR):
-            trimmed_log = log[len(gsuite.LOG_START_CHR):]
+
+        try:
+            response, log = self.client.request(url=log_url, headers=self.log_headers())
+        except self.client.HttpError:
+            self.logger.error('Could not obtain log. Check file_id, max revisions, and permission for file')
+            raise SystemExit('Cannot continue without log')
         else:
-            self.logger.debug('Beginning of log = {}'.format(log[:10]))
-            raise gsuite.InvalidLogFormat('Check gsuite.LOG_START_CHR and compare to beginning of log')
+            if log.startswith(gsuite.LOG_START_CHR):
+                trimmed_log = log[len(gsuite.LOG_START_CHR):]
+            else:
+                self.logger.debug('Beginning of log = {}'.format(log[:10]))
+                raise gsuite.InvalidLogFormat('Check gsuite.LOG_START_CHR and compare to beginning of log')
 
         return json.loads(trimmed_log)
 
