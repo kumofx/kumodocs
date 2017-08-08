@@ -4,6 +4,7 @@ from tests.gsuite_tests import get_driver, check_recover_objects
 
 driver = get_driver('document')
 
+
 # noinspection PyClassHasNoInit
 class TestLogMsg:
     def test_log_msg(self):
