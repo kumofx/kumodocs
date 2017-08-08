@@ -179,19 +179,6 @@ class Client(object):
                     f.write(file_['id'])
 
     @staticmethod
-    def get_download_ext(html_response):
-        """ 
-        Returns extension for downloaded resource as formatted for GSuite API html response
-        :param html_response:  GSuite API html response 
-        :return: Extension of downloaded resource (png, pdf, doc, etc)
-        """
-        cdisp = html_response['content-disposition']
-        start_index = cdisp.index('.')
-        end_index = cdisp.index('"', start_index)
-        extension = cdisp[start_index:end_index]
-        return extension
-
-    @staticmethod
     def create_log_url(start, end, choice):
         drive = gsuite.LOG_DRIVE[choice.drive]
         params = gsuite.REV_PARAMS.format(start=start, end=end)

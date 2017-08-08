@@ -1,15 +1,24 @@
-import json
+import logging
 import os
 
-from docsparser import ImageParser, CommentsParser
-from gsuite import log_msg
-
-DELIMITER = '|'
-
+from baseclass import Handler, Parser
+# noinspection PyUnresolvedReferences
+from docshandler import ImageParser, CommentsParser, create_obj_list, insert, delete
 
 # TODO refactor all service requests to gapiclient
+INDEX_OFFSET = 0
+logger = logging.getLogger(__name__)
 
-class SlidesParser(object):
+
+class SlidesHandler(Handler):
+    @property
+    def parsers(self):
+        return self._parsers
+
+    @property
+    def logger(self):
+        return logger
+
     class SlidesLine(object):
         """ Abstraction of a Slides revision log entry along with methods required to retrieve objects"""
 
@@ -82,56 +91,22 @@ class SlidesParser(object):
         def not_drive_src(self):
             return self.check_nested_value(self.not_drive, target=list, func=type)
 
-    def __init__(self, client, kumo_obj, delimiter='|'):
-        self.log = None
-        self.flat_log = None
-        self.delimiter = delimiter
-        self.client = client
-        self.service = client.service  # api service
-        self.KumoObj = kumo_obj
+    def __init__(self, client, delimiter=None, parsers=None):
+        super(SlidesHandler, self).__init__(client, delimiter)
+        self._parsers = [self.init_parser(p) for p in parsers or self.collect_parsers(__name__)]
 
-        # parsers
-        self.image_parser = ImageParser(self.service)
-        self.comments_parser = CommentsParser(self.service)
         self.pt_parser = PlainTextParser(self.KumoObj)
 
-    def recover_objects(self, log, flat_log, choice):
-        """ Recovers plain text, comments, images, drawings, and suggestions from the log
-        :return: A list of recovered objects as KumoObj
-        """
+    def parser_opts(self, log, flat_log, choice):
+        """ Additional arguments get sent to each parser's parse() function"""
 
-        objects = []
-        if flat_log:
-            objects.extend([self.KumoObj(filename='flat-log.txt', content='\n'.join(str(line) for line in flat_log))])
-        image_ids = self.get_slide_objects(log=log)
-
-        objects.append(self.KumoObj(filename='revision-log.txt', content=json.dumps(log, indent=2)))
-        objects.append(self.get_comments(file_choice=choice))
-        objects.extend(self.get_plain_text(log=log))
-
-        objects.extend(self.get_images(image_ids=image_ids, get_download_ext=self.client.get_download_ext,
-                                       file_choice=choice))
-
-        return objects
-
-    def get_plain_text(self, log):
-        """ Returns a list of KumoObj containing plain-text content for each text box in the presentation"""
-
-        log_msg(self, 'Recovering plain text', 'info')
-        return self.pt_parser.get_plain_text(log)
-
-    def parse_log(self, c_log):
-        """ Log flattening not implemented yet"""
-        return []
-
-    def parse_snapshot(self, snapshot):
-        """ Log flattening not implemented yet"""
-        return []
+        image_ids = self.get_slide_objects(log)
+        return {'image_ids': image_ids}
 
     def get_slide_objects(self, log):
         """ Gets objects(only images for now) associated with slide from the log"""
 
-        log_msg(self, 'Retrieving images', 'info')
+        self.logger.info('Retrieving images')
         image_ids = {}
 
         for line in (self.SlidesLine(entry) for entry in log['changelog']):
@@ -140,51 +115,21 @@ class SlidesParser(object):
 
         return image_ids
 
-    def create_obj_list(self, objects, type_):
-        """
-        Creates a list of KumoObj of the appropriate type adn content
-        :param objects: A list of objects with a content property
-        :param type_: object type is prepended to the filename
-        :return: List of KumoObj
-        """
-        obj_list = []
-        for i, obj in enumerate(objects):
-            filename = '{}{}{}'.format(type_, i, obj.extension)
-            obj_list.append(self.KumoObj(filename=filename, content=obj.content))
-        return obj_list
 
-    def get_images(self, image_ids, get_download_ext, file_choice):
-        """
-        Retrieves images using private API and image_ids
-        :param file_choice: gsuite.FileChoice object
-        :param image_ids: Cosmo image IDs retrieved from a Google Docs log
-        :param get_download_ext: Function which retrieves the proper image extension
-        :return: List of KumoObj with image contents.
-        """
-        log_msg(self, 'Retrieving images', 'info')
-        images = self.image_parser.get_images(image_ids=image_ids, file_id=file_choice.file_id,
-                                              drive=file_choice.drive, get_download_ext=get_download_ext)
-
-        return self.create_obj_list(images, 'img')
-
-    def get_comments(self, file_choice):
-        """
-        Retrieves comment data using GSuite API.
-        :return: KumoObj containing retrieved comment data
-        """
-        log_msg(self, 'Retrieving comments', 'info')
-        comments = '\n'.join(str(line) for line in self.comments_parser.get_comments(file_choice.file_id))
-        comment_obj = self.KumoObj(filename='comments.txt', content=comments)
-        return comment_obj
-
-
-class PlainTextParser(object):
+class PlainTextParser(Parser):
     """ Returns a list of KumoObj containing plain-text for each text box for each slide"""
 
-    def __init__(self, kumo_obj):
-        self.KumoObj = kumo_obj
+    @property
+    def logger(self):
+        return logger
 
-    def get_plain_text(self, log):
+    def __init__(self, service):
+        super(PlainTextParser, self).__init__(service)
+        self.KumoObj = SlidesHandler.KumoObj
+
+    def parse(self, log, flat_log, choice, **kwargs):
+        """ Returns a list of KumoObj containing plain-text content for each text box in the presentation"""
+        self.logger.info('Recovering plain text')
         p = Presentation(log)
         return self.write_output(p)
 
@@ -216,10 +161,12 @@ class Presentation(object):
                          'i1': {'slide': 'p', 'string': ''},
                          'i3': {'slide': 'p', 'string': ''}}
         self.slide_list = ['p']
+        self.logger = logger
         self.data = self.trim_log(log)
         self.parse(self.data)
 
-    def trim_log(self, log):
+    @staticmethod
+    def trim_log(log):
         """
         :param log: Revision log
         :return: Returns changelog portion of revision log
@@ -254,16 +201,8 @@ class Presentation(object):
         add_string = line[4]
         index = line[3]
         old_string = self.box_dict[box_dest]['string']
-        new_string = self.insert(old_string, add_string, index)
+        new_string = insert(old_string, add_string, index, index_offset=INDEX_OFFSET)
         self.box_dict[box_dest]['string'] = new_string
-
-    def insert(self, old, add, i):
-        """ Returns a new string with the added portion inserted at index i """
-        return old[:i] + add + old[i:]
-
-    def delete(self, old, start, end):
-        """ Returns a new string with the portion deleted from si to ei """
-        return old[:start] + old[end:]
 
     def parse_mts(self, data):
         """ Parse each line entry separately in the multiset """
@@ -276,7 +215,7 @@ class Presentation(object):
         box_dest = line[1]
         start_i, end_i = line[3], line[4]
         old_string = self.box_dict[box_dest]['string']
-        new_string = self.delete(old_string, start_i, end_i)
+        new_string = delete(old_string, start_i, end_i, index_offset=INDEX_OFFSET)
         self.box_dict[box_dest]['string'] = new_string
 
     def add_box(self, line):
@@ -318,7 +257,7 @@ class Presentation(object):
                 del self.box_dict[box]
                 self.slide_dict[parent].remove(box)
             except KeyError:
-                log_msg(cls=self, msg='Error while deleting box {}'.format(box), error_level='exception')
+                self.logger.exception('Error while deleting box {}'.format(box))
 
     def move_slide(self, line):
         """ Swap slides at position line[1] and line[2] in slide_list"""

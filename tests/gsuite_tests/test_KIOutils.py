@@ -57,7 +57,7 @@ class TestKIOutils(unittest.TestCase):
         open('some/path/here/test1.txt', 'a').close()
         open('some/path/here/test2.txt', 'a').close()
         KIOutils.remove_directory('some/')
-	self.assertFalse(os.path.isdir('some/'))
+        self.assertFalse(os.path.isdir('some/'))
         with self.assertRaises(IOError):
             open('some/path/here/test1.txt')
             open('some/path/here/test2.txt')

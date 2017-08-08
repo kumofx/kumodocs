@@ -4,28 +4,33 @@ from collections import namedtuple
 
 import KIOutils
 from gsuite import FileChoice
-from gsuite.docsparser import DocsParser
+from gsuite.docshandler import DocsHandler
 from gsuite.driver import GSuiteDriver
-from gsuite.sheetsparser import SheetsParser
-from gsuite.slidesparser import SlidesParser
+from gsuite.sheetshandler import SheetsHandler
+from gsuite.slideshandler import SlidesHandler
 
 # sys.path.append(os.path.abspath('.'))
 
 TestCase = namedtuple('TestCase', 'parser choice')
 
-SAMPLES = {'document': TestCase(DocsParser, FileChoice(file_id='1AD0Shz2av1uXAr3Uea36QZCUNOHhh6cuv2FD4qxtsdM',
-                                                       title='docstest', drive='document', max_revs=75)),
-           'presentation': TestCase(SlidesParser, FileChoice(file_id='1MLX72bIOxQf9zm3HYtN8NXN8BEkkPQ5oXiwfddtVDe8',
-                                                             title='slidestest', drive='presentation', max_revs=150)),
-           'spreadsheet': TestCase(SheetsParser, FileChoice(file_id='1-90_i4MLgjGQzLVRUrYjmoymJB0JftsYvWG6DS0wqpY',
-                                                            title='sheetstest', drive='spreadsheet', max_revs=8)),
-           'drawing': TestCase(SlidesParser, FileChoice(file_id='1BRGVuBA6-dJihXOUyEtGQ34sWM4NlKjEwDNEQWnQGyc',
-                                                        title='drawingstest', drive='drawing', max_revs=74))}
+SAMPLES = {'document': TestCase(DocsHandler, FileChoice(file_id='1AD0Shz2av1uXAr3Uea36QZCUNOHhh6cuv2FD4qxtsdM',
+                                                        title='docstest', drive='document', max_revs=75)),
+           'presentation': TestCase(SlidesHandler, FileChoice(file_id='1MLX72bIOxQf9zm3HYtN8NXN8BEkkPQ5oXiwfddtVDe8',
+                                                              title='slidestest', drive='presentation', max_revs=150)),
+           'spreadsheet': TestCase(SheetsHandler, FileChoice(file_id='1-90_i4MLgjGQzLVRUrYjmoymJB0JftsYvWG6DS0wqpY',
+                                                             title='sheetstest', drive='spreadsheet', max_revs=8)),
+           'drawing': TestCase(SlidesHandler, FileChoice(file_id='1BRGVuBA6-dJihXOUyEtGQ34sWM4NlKjEwDNEQWnQGyc',
+                                                         title='drawingstest', drive='drawing', max_revs=74))}
 
 
-class TestDriver(object):
+class TestDriver(GSuiteDriver):
     def __init__(self):
-        self.driver = GSuiteDriver()
+        super(TestDriver, self).__init__()
+        self.log, self.flat_log = None, None
+
+    def clear(self):
+        """ Clear attributes for the next test """
+        self.log, self.flat_log, self.choice, self._parser = None, None, None, None
 
 
 test_driver = TestDriver()
@@ -34,10 +39,10 @@ test_driver = TestDriver()
 def get_driver(drive_type):
     """ Given a drive type, returns driver with parser and choice listed in SAMPLES """
     sample = SAMPLES[drive_type]
-    driver = test_driver.driver
-    driver.parser = sample.parser(driver.client, driver.KumoObj)
-    driver.choice = sample.choice
-    return driver
+    test_driver.clear()
+    test_driver.parser = sample.parser(test_driver.client)
+    test_driver.choice = sample.choice
+    return test_driver
 
 
 def check_img(fn, content, hashes):

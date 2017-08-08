@@ -1,7 +1,7 @@
 import StringIO
 import fnmatch
 import hashlib
-import json
+import logging
 import os
 import platform
 import subprocess
@@ -14,7 +14,9 @@ from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 
 import KIOutils
-from gsuite import log_msg
+from baseclass import Handler
+
+logger = logging.getLogger(__name__)
 
 
 def default_chrome_path():
@@ -35,7 +37,8 @@ class ChromeDriver(object):
                     ['chmod', 'u+x', 'chromedriver'])}
 
     def __init__(self, chrome_path=default_chrome_path()):
-        log_msg(self, msg='Starting the Chrome service', error_level='info')
+        self.logger = logging.getLogger('ChromeDriver')
+        logger.info('Starting the Chrome service')
         self.downloaded = False
         self.cmd = None
         self.chrome_path = chrome_path
@@ -50,10 +53,10 @@ class ChromeDriver(object):
             try:
                 self.delete_chromedriver()
             except OSError:
-                log_msg(self, msg='Failed to remove chromedrive', error_level='info')
+                logger.info('Failed to remove chromedrive')
             else:
                 self.downloaded = False
-                log_msg(self, msg='Chromedriver removed', error_level='info')
+                logger.info('Chromedriver removed')
 
     def delete_chromedriver(self):
         basepath = os.path.abspath(os.path.join(self.chrome_path, '..'))
@@ -61,14 +64,15 @@ class ChromeDriver(object):
         for f in filenames:
             os.remove(f)
 
-    def get_architecture(self):
+    @staticmethod
+    def get_architecture():
         return '{os}{bits}'.format(os=platform.system(), bits=64 if sys.maxsize > 2 ** 32 else 32)
 
     def download_chromedriver(self, path=KIOutils.kumo_working_directory(), attempts=3):
         os_url = self.get_url()
         while attempts:
             try:
-                log_msg(self, 'URL requested: {}'.format(os_url), 'debug')
+                logger.debug('URL requested: {}'.format(os_url))
                 r = requests.get(os_url, stream=True)
                 md5_hash = r.headers['ETag'][1:-1]
                 if hashlib.md5(r.content).hexdigest() != md5_hash:
@@ -77,12 +81,12 @@ class ChromeDriver(object):
                     attempts = 0
             except requests.exceptions.RequestException:
                 attempts -= 1
-                log_msg(self, msg='Error obtaining chromedriver. Retrying ({})'.format(attempts), error_level='error')
+                logger.error('Error obtaining chromedriver. Retrying ({})'.format(attempts))
             else:
                 zipf = zipfile.ZipFile(StringIO.StringIO(r.content))
                 zipf.extractall(path=path)
                 self.downloaded = True
-                log_msg(self, msg='Chromedriver downloaded', error_level='info')
+                logger.info('Chromedriver downloaded')
         if not self.downloaded:
             raise SystemExit('Could not download chromedriver.')
 
@@ -97,7 +101,7 @@ class ChromeDriver(object):
             os_url, self.cmd = self.CHROMEDRIVER_OS_VALS[self.get_architecture()]
             os_url = os_url.format(ver=self.latest_release())
         except KeyError:
-            log_msg(self, msg='Cannot find chromedriver for unknown OS type', error_level='exception')
+            logger.exception('Cannot find chromedriver for unknown OS type')
             raise SystemExit('Unknown OS type: {}'.format(sys.platform))
 
         return os_url
@@ -117,7 +121,7 @@ class ChromeDriver(object):
         try:
             driver = self.find_chromedriver()
         except WebDriverException:
-            log_msg(self, msg='Unable to locate chromedriver', error_level='error')
+            logger.error('Unable to locate chromedriver')
             time.sleep(0.1)
             download = raw_input('\nNo chrome driver found.  Download? (y/n): ')
             if download.lower().startswith('y'):
@@ -126,10 +130,10 @@ class ChromeDriver(object):
                     driver = webdriver.Chrome(executable_path=self.chrome_path)
                 except WebDriverException as e:
                     if 'cannot find' in e.msg:
-                        log_msg(self, 'Could not start Chrome browser', 'critical')
+                        logger.critical('Could not start Chrome browser')
                         raise SystemExit('Forms log cannot be retrieved without Chrome and chromedriver.')
                     else:
-                        log_msg(self, 'Cannot start the Chrome browser', 'exception')
+                        logger.exception('Cannot start the Chrome browser')
                         raise SystemExit('Forms log cannot be retrieved without Chrome and chromedriver.')
 
             else:
@@ -138,58 +142,40 @@ class ChromeDriver(object):
         return driver
 
 
-# TODO refactor all service requests to gapiclient
+class FormsHandler(Handler):
+    @property
+    def parsers(self):
+        return self._parsers
 
-class FormsParser(object):
-    def __init__(self, client, kumo_obj, delimiter='|'):
-        self.log = None
-        self.flat_log = None
-        self.delimiter = delimiter
-        self.client = client
-        self.service = client.service  # api service
-        self.KumoObj = kumo_obj
+    @property
+    def logger(self):
+        return logger
+
+    def __init__(self, client, delimiter=None, parsers=None):
+        super(FormsHandler, self).__init__(client, delimiter)
+        self._parsers = [self.init_parser(p) for p in parsers or self.collect_parsers(__name__)]
         self.required_cookies = ['HSID', 'SSID', 'SID']
-
-        # parsers
-
-    def recover_objects(self, log, flat_log, choice):
-        """ Recovers plain text, comments, images, drawings, and suggestions from flat_log. 
-        :return: A list of recovered objects as KumoObj
-        """
-        objects = []
-
-        if flat_log:
-            objects.extend([self.KumoObj(filename='flat-log.txt', content='\n'.join(str(line) for line in flat_log))])
-        objects.extend([self.KumoObj(filename='revision-log.txt', content=json.dumps(log, indent=2))])
-        return objects
 
     def log_headers(self):
         headers = {'cookie': ''}
-        log_msg(self, 'NOTE: Forms requires additional authorization.  Opening Chrome to input credentials', 'info')
+        logger.info('NOTE: Forms requires additional authorization.  Opening Chrome to input credentials')
         cookies = self.get_cookies()
         for cookie in cookies:
             if cookie['name'] in self.required_cookies:
                 headers['cookie'] += '{}={};'.format(str(cookie['name']), str(cookie['value']))
         return headers
 
-    def get_cookies(self):
+    @staticmethod
+    def get_cookies():
         with ChromeDriver() as driver:
             driver.get(ChromeDriver.START_PAGE)
-            log_msg(self, 'Waiting for authorization... check Chrome page', 'info')
+            logger.info('Waiting for authorization... check Chrome page')
             while driver.current_url != ChromeDriver.LANDING_PAGE:
                 time.sleep(0.1)
             try:
-                log_msg(self, 'Authorization successful', 'info')
+                logger.info('Authorization successful')
                 cookies = driver.get_cookies()
             except WebDriverException:
                 raise SystemExit('Could not retrieve credentials from Chrome')
             else:
                 return cookies
-
-    def parse_log(self, c_log):
-        """ Log flattening not implemented yet"""
-        return []
-
-    def parse_snapshot(self, snapshot):
-        """ Log flattening not implemented yet"""
-        return []
