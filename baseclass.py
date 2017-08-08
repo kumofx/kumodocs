@@ -275,7 +275,7 @@ class Handler(object):
 
     def init_parser(self, parser):
         """ Initializes each parser with the required attributes """
-        return parser(self.client.service)
+        return parser(self.client)
 
     def recover_objects(self, log, flat_log, choice):
         """ Runs parse() for each parser in self.parser to recover objects from log and flat_log.
