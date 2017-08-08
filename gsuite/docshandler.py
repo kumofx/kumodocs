@@ -12,7 +12,6 @@ from baseclass import Parser, Handler
 logger = logging.getLogger(__name__)
 
 INDEX_OFFSET = -1
-# TODO refactor all service requests to gapiclient
 
 
 def insert(old_string, new_string, index, index_offset):
@@ -334,14 +333,10 @@ class CommentsParser(Parser):
         return comment_obj
 
     def get_comments(self, file_id):
-        """ Gets comments and replies to those comments, and metadata for deleted comments """
+        """ Fetches comments,replies, metadata, and formats according to format_contents """
 
-        contents = self.service.comments().list(fileId=file_id, includeDeleted=True,
-                                                fields=self.comment_fields()).execute()
-        contents = contents['items']
-        comments = self.format_comments(contents)
-
-        return comments
+        comments = self.client.fetch_comments(file_id, self.comment_fields())
+        return self.format_comments(comments)
 
     def format_comments(self, contents):
         """ Applies templates to each comment and each reply in contents """
@@ -389,7 +384,6 @@ class ImageParser(Parser):
     def logger(self):
         return logger
 
-    # TODO refactor api logic to gapiclient
     Image = namedtuple('Image', 'content extension img_id')
 
     def parse(self, log, flat_log, choice, **kwargs):
@@ -412,8 +406,8 @@ class ImageParser(Parser):
         links = self.get_image_links(image_ids=image_ids, file_id=file_id, drive=drive)
         for url, img_id in links.itervalues():
             try:
-                response, content = self.service.http.request(url)
-            except:
+                response, content = self.client.request(url)
+            except self.client.HttpError:
                 self.logger.debug('Image could not be retrieved:\n\turl={}\n\t img_id={}'.format(url, img_id))
             else:
                 extension = get_download_ext(response)
@@ -428,9 +422,9 @@ class ImageParser(Parser):
         render_url, request_body, my_headers = self.get_render_request(image_ids=image_ids, file_id=file_id,
                                                                        drive=drive)
         try:
-            response, content = self.service.http.request(render_url, method='POST',
-                                                          body=request_body, headers=my_headers)
-        except:
+            response, content = self.client.request(render_url, method='POST',
+                                                    body=request_body, headers=my_headers)
+        except self.client.HttpError:
             self.logger.debug(
                 'Renderdata url cannot be resolved:\n\trender_url={}\n\t body={}'.format(render_url, request_body))
         else:
@@ -509,9 +503,14 @@ class DrawingsParser(Parser):
             # url = DRAW_PATH.format(d_id=drawing_id[0], w=drawing_id[1], h=drawing_id[2])
             params = gsuite.DRAW_PARAMS.format(w=drawing.width, h=drawing.height)
             url = gsuite.API_BASE.format(params=params, drive=drive, file_id=drawing.d_id)
-            response, content = self.service.http.request(url)
-            extension = get_download_ext(response)
-            drawings.append(self.Drawing(content, extension))
+
+            try:
+                response, content = self.client.request(url)
+            except self.client.HttpError:
+                self.logger.info('Could not retrieve Drawing id {}'.format(drawing.d_id))
+            else:
+                extension = get_download_ext(response)
+                drawings.append(self.Drawing(content, extension))
 
         return drawings
 

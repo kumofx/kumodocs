@@ -9,6 +9,7 @@ from collections import defaultdict
 import googleapiclient.discovery
 # noinspection PyPackageRequirements
 import googleapiclient.errors
+# noinspection PyPackageRequirements
 import httplib2
 import oauth2client.client as oa_client
 import oauth2client.file as oa_file
@@ -17,12 +18,14 @@ import oauth2client.tools as oa_tools
 import KIOutils
 import gsuite
 
-log = logging.getLogger(__name__)
-log.addHandler(logging.NullHandler())
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 class Client(object):
     """ Wraps a googleapiclient service object with functionality needed by multiple GSuite modules """
+
+    HttpError = googleapiclient.errors.HttpError
 
     def __init__(self, service="drive", scope='https://www.googleapis.com/auth/drive'):
         self.service = self.start(service, scope)
@@ -35,7 +38,7 @@ class Client(object):
         :return: Google API client for making requests. 
         """
 
-        log.info('Creating the client service')
+        logger.info('Creating the client service')
         tokens, client_secrets = KIOutils.get_abs_config_path()
         flow = oa_client.flow_from_clientsecrets(client_secrets,
                                                  scope=scope,
@@ -56,13 +59,14 @@ class Client(object):
                                                      cache_discovery=False)
             client.http = http  # directly expose http without using 'protected' _http
         except Exception:
-            log.error('Failed to create service', exc_info=True)
+            logger.error('Failed to create service', exc_info=True)
             raise sys.exit(1)
         else:
-            log.info('Created and authorized the client service')
+            logger.info('Created and authorized the client service')
             return client
 
-    def has_client_secrets(self, client_secrets):
+    @staticmethod
+    def has_client_secrets(client_secrets):
         """ Returns true if client_id and client_secrets set in file client_secrets"""
         with open(client_secrets) as json_data:
             secrets = json.load(json_data)['installed']
@@ -82,14 +86,12 @@ class Client(object):
         try:
             response, content = self.service.http.request(url, **kwargs)
             if response['status'] != '200':
-                log.critical('gapiclient.request has non-200 response status')
-                log.debug('response = {}'.format(response))
-                log.debug('content = {}'.format(content))
-                raise googleapiclient.errors.HttpError(resp=response, content=content, uri=url)
-        except googleapiclient.errors.HttpError:
-            log.debug('googleapiclient.errors.HttpError in gapiclient', exc_info=True)
-            log.error('Could not obtain log. Check file_id, max revisions, and permission for file')
-            sys.exit(3)
+                logger.critical('status {} returned for url {}'.format(response['status'], url))
+                logger.debug('response = {}'.format(response))
+                logger.debug('content = {}'.format(content))
+                raise self.HttpError(resp=response, content=content, uri=url)
+        except self.HttpError:
+            logger.debug('HttpError in gapiclient', exc_info=True)
         else:
             return response, content
 
@@ -108,21 +110,21 @@ class Client(object):
             try:
                 file_id = choice.read()
             except AttributeError:
-                log.error('No file chosen. Exiting.')
+                logger.error('No file chosen. Exiting.')
                 sys.exit(2)
             except IOError:
-                log.error('Error reading file. Exiting')
+                logger.error('Error reading file. Exiting')
                 sys.exit(3)
             else:
                 choice.close()
                 title, drive = KIOutils.split_title(choice.name)
-                log.info('Chose file "{}" from service "{}"'.format(title, drive))
+                logger.info('Chose file "{}" from service "{}"'.format(title, drive))
 
         revisions = self.service.revisions().list(fileId=file_id, fields='items(id)').execute()
         max_revs = revisions['items'][-1]['id']
 
         choice = gsuite.FileChoice(str(file_id), title, drive, int(max_revs))
-        log.debug('Choice is {}'.format(choice))
+        logger.debug('Choice is {}'.format(choice))
         return choice
 
     def list_all_files(self):
@@ -131,7 +133,7 @@ class Client(object):
         :return: List of File resources 
         """
 
-        log.info('Retrieving list of drive files')
+        logger.info('Retrieving list of drive files')
         result = defaultdict(list)
         page_token = None
         email = self.email_address()
@@ -145,7 +147,7 @@ class Client(object):
                 try:
                     files = self.service.files().list(**param).execute()
                 except googleapiclient.errors.HttpError:
-                    log.error('Failed to retrieve list of files', exc_info=True)
+                    logger.error('Failed to retrieve list of files', exc_info=True)
                     break
                 else:
                     result[drive_type].extend(files['items'])
@@ -158,6 +160,11 @@ class Client(object):
         """ Returns email address for the currently authenticated user """
         about_me = self.service.about().get(fields='user(emailAddress)').execute()
         return about_me['user']['emailAddress']
+
+    def fetch_comments(self, file_id, fields):
+        contents = self.service.comments().list(fileId=file_id, includeDeleted=True, fields=fields).execute()
+        comments = contents['items']
+        return comments
 
     @staticmethod
     def create_temp_files(temp_dir, files):
