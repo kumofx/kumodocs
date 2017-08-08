@@ -1,13 +1,11 @@
 *.pyc
-.idea/*
-downloaded/*
+.idea/
+downloaded/
 config/log*
-*bak*
 config/gdrive.dat
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
 *$py.class
 
 # C extensions
@@ -28,13 +26,13 @@ sdist/
 var/
 wheels/
 *.egg-info/
+kumodocs/
 .installed.cfg
 *.egg
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
 *.spec
 
 # Installer logs
@@ -68,3 +66,4 @@ target/
 env/
 venv/
 ENV/
+
