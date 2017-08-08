@@ -5,7 +5,6 @@ from baseclass import Handler, Parser
 # noinspection PyUnresolvedReferences
 from docshandler import ImageParser, CommentsParser, create_obj_list, insert, delete
 
-# TODO refactor all service requests to gapiclient
 INDEX_OFFSET = 0
 logger = logging.getLogger(__name__)
 
