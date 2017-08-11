@@ -26,8 +26,7 @@ class GSuiteDriver(Driver):
     SuggestionContent = namedtuple('content', 'added, deleted')
 
     def __init__(self, base_dir='downloaded', delimiter='|', parser=None):
-        self.client = gapiclient.Client(service='drive', scope=['https://www.googleapis.com/auth/drive',
-                                                                'https://www.googleapis.com/auth/forms'])
+        self.client = self.start_client()
         self._logger = logging.getLogger(__name__)
         self._base_dir = base_dir
         self.delimiter = delimiter
@@ -35,6 +34,10 @@ class GSuiteDriver(Driver):
         self._parser = parser
         self.choice_start = None
         self.choice_end = None
+
+    @staticmethod
+    def start_client(service='drive', scope='https://www.googleapis.com/auth/drive'):
+        return gapiclient.Client(service=service, scope=scope)
 
     def init_parser(self, choice=None):
         """ Initializes the correct parser for the given choice"""
@@ -206,4 +209,3 @@ class GSuiteDriver(Driver):
         for obj in objects:
             KIOutils.ensure_path(os.path.join(base_path, os.path.dirname(obj.filename)))
             self.write_object(obj, base_path)
-
