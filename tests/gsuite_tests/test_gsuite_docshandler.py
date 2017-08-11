@@ -1,165 +1,281 @@
+import unittest
+
 from nose import SkipTest
+from nose.tools import eq_, raises
 
-from tests.gsuite_tests import get_driver, check_recover_objects
+from gsuite.docshandler import *
+from tests.gsuite_tests import test_driver
 
-driver = get_driver('document')
-
-
-# noinspection PyClassHasNoInit
-class TestLogMsg:
-    def test_log_msg(self):
-        # assert_equal(expected, log_msg(cls, msg, error_level))
-        raise SkipTest  # TODO: implement your test here
+driver = test_driver.load_case('document')
 
 
-# noinspection PyClassHasNoInit
-class TestInsert:
-    def test_insert(self):
-        # assert_equal(expected, insert(old_string, new_string, index))
-        raise SkipTest  # TODO: implement your test here
+def test_insert():
+    eq_('abc', insert('', 'abc', 0, 0))
+    eq_('abZc', insert('abc', 'Z', -1, 0))
+    eq_('abzZc', insert('abZc', 'z', 2, 0))
+    eq_('Aab', insert('ab', 'A', 1, -1))
 
 
-# noinspection PyClassHasNoInit
-class TestDelete:
-    def test_delete(self):
-        # assert_equal(expected, delete(old_string, starting_index, ending_index))
-        raise SkipTest  # TODO: implement your test here
+def test_delete():
+    eq_('', delete('abc', 0, 3, 0))
+    eq_('ac', delete('abc', 1, 2, 0))
+    eq_('', delete('', 0, 2, 0))
+    eq_('af', delete('abcdef', 0, -1, 1))
+    eq_('ef', delete('abcdef', 0, 4, 0))
 
 
-# noinspection PyClassHasNoInit
-class TestDocsParser:
-    def test___init__(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        raise SkipTest  # TODO: implement your test here
+@raises(ValueError)
+def test_get_dict_valueerror():
+    get_dict('abcd|efgh')
 
-    def test_recover_objects(self):
-        # sample = driver.choice.title
-        # log = driver.get_log(start=1, end=driver.choice.max_revs)
-        # flat_log = driver.flatten_log(log)
-        # objects = [(o.filename, o.content) for o in driver.recover_objects(log=log, flat_log=flat_log,
-        #                                                                    choice=driver.choice)]
-        # hashes = hash_sample_images(sample)
-        # for fn, content in objects:
-        #     if fn.endswith('.txt'):
-        #         yield check_doc, fn, content, sample
-        #     else:
-        #         yield check_img, fn, content, hashes
-        check_recover_objects(driver)
 
-    def test_create_obj_list(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.create_obj_list(objects, type_))
-        raise SkipTest  # TODO: implement your test here
+def test_get_dict():
+    line = 'ab|de|gh|{"a": 1, "b": 2}'
+    dict_ = get_dict(line)
+    assert isinstance(dict_, dict)
+    eq_(dict_['a'], 1)
 
-    def test_find_sugg_by_index(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.find_sugg_by_index(line_dict, suggestions))
-        raise SkipTest  # TODO: implement your test here
 
-    def test_flatten_mts(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.flatten_mts(entry, line_copy, line))
-        raise SkipTest  # TODO: implement your test here
+def test_get_download_ext():
+    resp = {'content-disposition': 'inline;filename="hash3_v1_sm.jpg"'}
+    eq_('.jpg', get_download_ext(resp))
 
-    def test_get_comments(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.get_comments(file_choice))
-        raise SkipTest  # TODO: implement your test here
 
-    def test_get_doc_objects(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.get_doc_objects(flat_log))
-        raise SkipTest  # TODO: implement your test here
+def create_obj_list():
+    obj = namedtuple('obj', 'content extension notused')
+    a = obj('obj a', '.tst', 'none')
+    b = obj('obj b', '.jpg', 'test2')
+    obj_list = create_obj_list(DocsHandler.KumoObj, [a, b], 'test')
+    assert isinstance(obj_list, list)
+    k0, k1 = obj_list[0], obj_list[1]
+    eq_('test0.tst', k0.filename)
+    eq_('obj a', k0.content)
 
-    def test_get_drawings(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.get_drawings(drawing_ids, drive, get_download_ext))
-        raise SkipTest  # TODO: implement your test here
 
-    def test_get_images(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.get_images(image_ids, get_download_ext, file_choice))
-        raise SkipTest  # TODO: implement your test here
+def test_has_drawing():
+    elem_dict, drawing_ids = {}, []
+    eq_(False, has_drawing(elem_dict, drawing_ids))
+    elem_dict = {'d_id': u'ssTSY-cZtq8C5S5MHzOJ3Fg'}
+    eq_(True, has_drawing(elem_dict, drawing_ids))
+    drawing_ids.append(gsuite.Drawing('ssTSY-cZtq8C5S5MHzOJ3Fg', 0, 0))
+    eq_(False, has_drawing(elem_dict, drawing_ids))
 
-    def test_get_log(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.get_log(start, end, choice))
-        raise SkipTest  # TODO: implement your test here
 
-    def test_get_plain_text(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.get_plain_text(flat_log))
-        raise SkipTest  # TODO: implement your test here
+def test_has_element():
+    eq_(False, has_element({}))
+    eq_(True, has_element({'epm': {'ee_eo': 1}}))
+    eq_(False, has_element({'epm': {'ee_o': 1}}))
 
-    def test_get_snapshot_line(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.get_snapshot_line(snapshot_entry))
-        raise SkipTest  # TODO: implement your test here
 
-    def test_has_drawing(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.has_drawing(elem_dict, drawing_ids))
-        raise SkipTest  # TODO: implement your test here
+def test_has_img():
+    eq_(False, has_img({}))
+    eq_(True, has_img({'img_cosmoId'}))
 
-    def test_has_element(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.has_element(line_dict))
-        raise SkipTest  # TODO: implement your test here
 
-    def test_has_img(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.has_img(elem_dict))
-        raise SkipTest  # TODO: implement your test here
-
-    def test_ins_sugg_text(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.ins_sugg_text(line_dict, old_sugg))
-        raise SkipTest  # TODO: implement your test here
-
-    def test_is_delete_suggestion(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.is_delete_suggestion(line_dict))
-        raise SkipTest  # TODO: implement your test here
+class TestSuggestionFuncs():
+    def setUp(self):
+        self.sugg = DocsHandler.Suggestion(sug_id='abc', content='test', start=1, end=4, deleted=[])
+        self.line_dict = {'sug_id': 'abc', 'string': 'test', 'ins_index': 1}
 
     def test_is_insert_suggestion(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.is_insert_suggestion(line_dict))
-        raise SkipTest  # TODO: implement your test here
+        # 'type' has already been checked to exist
+        d = {'type': 'is'}
+        eq_(False, is_insert_suggestion(d))
+        d = {'type': 'iss'}
+        eq_(True, is_insert_suggestion(d))
+        d = {'type': 'dss'}
+        eq_(False, is_insert_suggestion(d))
 
-    def test_new_drawing(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.new_drawing(elem_dict))
-        raise SkipTest  # TODO: implement your test here
+    def test_is_delete_suggestion(self):
+        # 'type' has already been checked to exist
+        d = {'type': 'ds'}
+        eq_(False, is_delete_suggestion(d))
+        d = {'type': 'iss'}
+        eq_(False, is_delete_suggestion(d))
+        d = {'type': 'dss'}
+        eq_(True, is_delete_suggestion(d))
+
+    @raises(KeyError)
+    def test_new_suggestion_raises_keyerror(self):
+        new_suggestion({})
 
     def test_new_suggestion(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.new_suggestion(line_dict))
-        raise SkipTest  # TODO: implement your test here
+        eq_(self.sugg, new_suggestion(self.line_dict))
 
-    def test_parse_log(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.parse_log(c_log))
-        raise SkipTest  # TODO: implement your test here
-
-    def test_parse_snapshot(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.parse_snapshot(snapshot))
-        raise SkipTest  # TODO: implement your test here
-
-    def test_rename_keys(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.rename_keys(log_dict))
-        raise SkipTest  # TODO: implement your test here
+    def test_ins_sugg_text(self):
+        new_sugg = DocsHandler.Suggestion(sug_id='abc', content='testtest', start=1, end=8, deleted=[])
+        eq_(new_sugg, ins_sugg_text(self.line_dict, self.sugg))
 
     def test_rm_sugg_text(self):
-        # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.rm_sugg_text(line_dict, suggestion))
-        raise SkipTest  # TODO: implement your test here
+        new_sugg = DocsHandler.Suggestion(sug_id='abc', content='t', start=1, end=1, deleted=['est'])
+        self.line_dict['start_index'], self.line_dict['end_index'] = 2, 4
+        eq_(new_sugg, rm_sugg_text(self.line_dict, self.sugg))
 
-    def test_stringify(self):
+    def test_find_sugg_by_index_finds_suggestion(self):
+        line_dict = {u'type': u'dss', u'start_index': 148, u'end_index': 164}
+        suggestions = {'sugid1': DocsHandler.Suggestion(148, 164, 'abc', 'no content', []),
+                       'sugid2': DocsHandler.Suggestion(165, 178, 'abc2', 'def', [])}
+        eq_(suggestions['sugid1'], find_sugg_by_index(line_dict, suggestions))
+
+    def test_find_sugg_by_index_no_suggestion(self):
+        line_dict = {u'type': u'dss', u'start_index': 148, u'end_index': 164}
+        suggestions = {'sugid1': DocsHandler.Suggestion(130, 147, 'abc', 'no content', []),
+                       'sugid2': DocsHandler.Suggestion(149, 163, 'abc2', 'def', [])}
+        eq_(None, find_sugg_by_index(line_dict, suggestions))
+
+
+@raises(KeyError)
+def test_new_drawing_raises_keyerror():
+    new_drawing({})
+
+
+def test_new_drawing():
+    drawing = gsuite.Drawing('abc12', 5, 15)
+    elem_dict = {'d_id': 'abc12', 'img_wth': '5', 'img_ht': 15}
+    eq_(drawing, new_drawing(elem_dict))
+
+
+class TestActionDict():
+    def setUp(self):
+        self.action_dict = {'type': 'dss', 'ins_index': 4, 'string': 'abcdef', 'start_index': 2, 'end_index': 3}
+
+    def test_has_insert_action(self):
+        eq_(False, has_insert_action(self.action_dict))
+        self.action_dict['type'] = 'iss'
+        eq_(True, has_insert_action(self.action_dict))
+
+    def test_has_delete_action(self):
+        eq_(True, has_delete_action(self.action_dict))
+        self.action_dict['type'] = 'iss'
+        eq_(False, has_delete_action(self.action_dict))
+
+    def test_insert_text(self):
+        eq_('catabcdefdog', insert_text(self.action_dict, 'catdog'))
+
+    def test_delete_text(self):
+        eq_('cdog', delete_text(self.action_dict, 'catdog'))
+
+
+# noinspection PyClassHasNoInit
+class TestDocsHandler:
+    def setUp(self):
+
+        self.handler = driver.parser
+
+    def test_parsers(self):
+        parsers = {p.__class__.__name__ for p in self.handler.parsers}
+        expected = {p.__name__ for p in (self.handler.LogParser, self.handler.FlatParser, CommentsParser,
+                                         DrawingsParser, ImageParser, PlaintextParser, SuggestionParser)}
+        eq_(expected, parsers)
+
+    def test_logger(self):
+        eq_(True, isinstance(self.handler.logger, logging.Logger))
+
+    def test___init__(self):
         # docs_parser = DocsHandler(client, KumoObj, delimiter)
-        # assert_equal(expected, docs_parser.stringify(log))
-        raise SkipTest  # TODO: implement your test here
+        docs_parser = DocsHandler(self.handler.client)
+        eq_(docs_parser.client, self.handler.client)
+        eq_(docs_parser.delimiter, Handler.DELIMITER)
+        eq_(docs_parser.parser_opt_args, {})
+        eq_(True, docs_parser.parsers is not None)
+
+    def test_parser_opts(self):
+        flat_log = driver.flat_log
+        opts = self.handler.parser_opts(log=None, flat_log=flat_log, choice=None)
+        expected = \
+            {'image_ids': {'1bolXg367NgeupsiDXAiAx5wfRNAky5P3LTk_0d8', '1SvX-I-GudRP2GqbRsdmhmZIeSqszpqxw2kpFmhk',
+                           '1cQTaNyeZeHYN44H7b6bv_eAhh6YecarV475YWK4', '1Vr8y2iC68Nij4ategyBqoh4iVE5jslngevD2g7A',
+                           '1s_e_THIKMaD0yw4vgOAGqrw_Nquf0OkYUXL6wW4', '1Z2Zo3QzsaactBwZeNWmQxf4fgIloui9wXHAPNyo',
+                           '1QJGug5MnfcQcxQTxMm1muQmqVH42tgP1T1rxGp4'},
+             'suggestions': self.handler.KumoObj(filename='suggestions.txt',
+                                                 content='{"suggest.zgic4a7zb5zf": [37, 60, "suggest.zgic4a7zb5zf", '
+                                                         '"Line added by suggestion", []], "suggest.zcyoau6se2vd": '
+                                                         '[104, 103, "suggest.zcyoau6se2vd", "", ["\\n\\n"]]}'),
+             'drawing_ids': [gsuite.Drawing(d_id='sqiFH3DuYjX0kc28Etpi1Ww', width=433, height=51)]}
+        eq_(expected, opts)
+
+    def test_parse_log_and_snapshot(self):
+        expected = []
+        expected.extend(self.handler.parse_snapshot(driver.log['chunkedSnapshot']))
+        expected.extend(self.handler.parse_log(driver.log['changelog']))
+        self.is_flat_log_equal(expected=expected, actual=driver.flat_log)
+
+    def is_flat_log_equal(self, expected, actual):
+        """ Dictionaries at the end of flat_log may be in different orders"""
+        assert len(expected) == len(actual)
+        for e, a in zip(expected, actual):
+            eq_(self.make_snapshot_line(e), self.make_snapshot_line(a))
+
+    def make_snapshot_line(self, line):
+        line_list = line.split(self.handler.delimiter)
+        line_list[-1] = json.loads(line_list[-1])
+        return line_list
+
+    def test_flatten_mts(self):
+        actual = []
+        line = ['timestamp', 'user_id', 'rev_num', None, None]
+        entry = self.make_mts_entry()
+        expected = self.make_flat_entry()
+        self.handler.flatten_mts(entry, actual, line)
+        eq_(actual, expected)
+
+    def test_recover_objects(self):
+        for obj_test in driver.check_recover_objects():
+            yield obj_test
+
+    def make_mts_entry(self):
+        mts = [{u'si': 1, u'ty': u'as', u'ei': 1, u'sm': {u'ps_sd_i': True, u'ps_sm_i': True, u'ps_kwn_i': True}},
+               {u'si': 0, u'ty': u'as', u'ei': 0, u'sm': {u'lgs_l': u'en'}, u'st': u'language'},
+               {u'si': 0, u'ty': u'as', u'ei': 1,
+                u'sm': {u'ts_it_i': True, u'ts_st_i': True, u'ts_fgc_i': True, u'ts_bd_i': True, u'ts_fs_i': True,
+                        u'ts_un_i': True, u'ts_ff_i': True, u'ts_va_i': True, u'ts_bgc_i': True, u'ts_sc_i': True},
+                u'st': u'text'}]
+        entry = {'ty': 'mlti', 'mts': mts}
+        return entry
+
+    def make_flat_entry(self):
+        flat_entry = [['timestamp', 'user_id', 'rev_num', None, None, 'adj_style', '{"start_index": 1, "end_index": 1, '
+                                                                                   '"style_mod": {"ps_sd_i": true, "ps_style_i": true, "ps_kwn_i": true}, "type": "as"}'],
+                      ['timestamp', 'user_id', 'rev_num', None, None, 'adj_style',
+                       '{"start_index": 0, "style_type": "language", "end_index": 0, "style_mod": '
+                       '{"language": "en"}, "type": "as"}'],
+                      ['timestamp', 'user_id', 'rev_num', None, None, 'adj_style',
+                       '{"start_index": 0, "style_type": "text", "end_index": 1, "style_mod": {"underline_i": true, '
+                       '"italic_i": true, "strikethrough_i": true, "foreground_color_i": true, "font_family_i": true, '
+                       '"vert_align_i": true, "bold_i": true, "font_size_i": true, "background_color_i": true, '
+                       '"small_caps_i": true}, "type": "as"}']]
+        return flat_entry
+
+    def test_rename_keys(self):
+        test_dict = {'si': 1, 'ei': 1, 'sm': {'ps_sd_i': True, 'ps_sm_i': True}}
+        expected = OrderedDict([('start_index', 1), ('end_index', 1), ('style_mod', OrderedDict([('ps_sd_i', True),
+                                                                                                 ('ps_style_i',
+                                                                                                  True)]))])
+        actual = self.handler.rename_keys(test_dict)
+        assert isinstance(actual, dict)
+        assert isinstance(actual['style_mod'], dict)
+        eq_(expected, actual)
+
+    def test_get_snapshot_line(self):
+        snapshot_entry = driver.log['chunkedSnapshot'][0][0]  # first line in flat_log after heading
+        line = driver.delimiter.join(str(item) for item in self.handler.get_snapshot_line(snapshot_entry))
+        flat_log_line = driver.flat_log[1]  # first line in flat_log after heading
+        eq_(self.make_snapshot_line(line), self.make_snapshot_line(flat_log_line))
+
+    def test_get_doc_objects(self):
+        image_ids, drawing_ids, sugg_obj = self.handler.get_doc_objects(driver.flat_log[:131])
+        expected_imids = {'1bolXg367NgeupsiDXAiAx5wfRNAky5P3LTk_0d8', '1SvX-I-GudRP2GqbRsdmhmZIeSqszpqxw2kpFmhk',
+                          '1cQTaNyeZeHYN44H7b6bv_eAhh6YecarV475YWK4', '1Vr8y2iC68Nij4ategyBqoh4iVE5jslngevD2g7A',
+                          '1s_e_THIKMaD0yw4vgOAGqrw_Nquf0OkYUXL6wW4', '1Z2Zo3QzsaactBwZeNWmQxf4fgIloui9wXHAPNyo',
+                          '1QJGug5MnfcQcxQTxMm1muQmqVH42tgP1T1rxGp4'}
+        expected_dids = [gsuite.Drawing(d_id=u'sqiFH3DuYjX0kc28Etpi1Ww', width=433, height=51)]
+        expected_sugg = self.handler.KumoObj(filename='suggestions.txt',
+                                             content='{"suggest.zgic4a7zb5zf": [37, 60, ''"suggest.zgic4a7zb5zf", '
+                                                     '"Line added by suggestion", []], "suggest.zcyoau6se2vd": [104, 103, '
+                                                     '"suggest.zcyoau6se2vd", "", ["\\n\\n"]]}')
+        eq_(image_ids, expected_imids)
+        eq_(drawing_ids, expected_dids)
+        eq_(sugg_obj, expected_sugg)
 
 
 # noinspection PyClassHasNoInit
@@ -235,3 +351,7 @@ class TestPlaintextParser:
         # plaintext_parser = PlaintextParser()
         # assert_equal(expected, plaintext_parser.get_plain_text(flat_log))
         raise SkipTest  # TODO: implement your test here
+
+
+if __name__ == '__main__':
+    unittest.main()
