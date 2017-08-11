@@ -54,7 +54,7 @@ def create_obj_list(kumo_obj, objects, type_):
     """
     Creates a list of KumoObj of the appropriate type and content
     :param kumo_obj: KumoObj object
-    :param objects: A list of objects with a content property
+    :param objects: A list of objects with a content and extension property
     :param type_: object type is prepended to the filename
     :return: List of KumoObj
     """
@@ -71,7 +71,12 @@ def has_drawing(elem_dict, drawing_ids):
 
 
 def has_element(line_dict):
-    return 'epm' in line_dict and 'ee_eo' in line_dict['epm']
+    try:
+        result = line_dict.get('epm').get('ee_eo') is not None
+    except AttributeError:
+        result = False
+
+    return result
 
 
 def has_img(elem_dict):
@@ -485,7 +490,7 @@ class DrawingsParser(Parser):
     def parse(self, log, flat_log, choice, **kwargs):
         self.logger.info('Retrieving drawings')
         drawing_ids = kwargs.get('drawing_ids')
-        drawings = self.get_drawings(drawing_ids=drawing_ids, drive='Drawing')
+        drawings = self.get_drawings(drawing_ids=drawing_ids, drive='drawings')
 
         return create_obj_list(self.KumoObj, drawings, 'drawing')
 
@@ -501,7 +506,7 @@ class DrawingsParser(Parser):
         drawings = []
         for drawing in drawing_ids:
             # url = DRAW_PATH.format(d_id=drawing_id[0], w=drawing_id[1], h=drawing_id[2])
-            params = gsuite.DRAW_PARAMS.format(w=drawing.width, h=drawing.height)
+            params = gsuite.DRAW_PARAMS.format(w=drawing.width * 10, h=drawing.height * 10)
             url = gsuite.API_BASE.format(params=params, drive=drive, file_id=drawing.d_id)
 
             try:
