@@ -233,7 +233,7 @@ class Handler(object):
 
         def parse(self, log, flat_log, choice, **kwargs):
             if flat_log:
-                filename = 'flat_log.txt'
+                filename = 'flat-log.txt'
                 content = '\n'.join(str(line) for line in flat_log)
                 return [self.KumoObj(filename=filename, content=content)]
             else:
@@ -275,7 +275,7 @@ class Handler(object):
 
     def init_parser(self, parser):
         """ Initializes each parser with the required attributes """
-        return parser(self.client.service)
+        return parser(self.client)
 
     def recover_objects(self, log, flat_log, choice):
         """ Runs parse() for each parser in self.parser to recover objects from log and flat_log.
