@@ -92,6 +92,7 @@ class Client(object):
                 raise self.HttpError(resp=response, content=content, uri=url)
         except self.HttpError:
             logger.debug('HttpError in gapiclient', exc_info=True)
+            raise
         else:
             return response, content
 
