@@ -504,11 +504,11 @@ class DrawingsParser(Parser):
         """
 
         # TODO get_download_ext -> call from client
-        drawings = []
+        drawings, drive = [], 'drawings'
         for drawing in drawing_ids:
             # url = DRAW_PATH.format(d_id=drawing_id[0], w=drawing_id[1], h=drawing_id[2])
             params = gsuite.DRAW_PARAMS.format(w=drawing.width, h=drawing.height)
-            url = gsuite.API_BASE.format(params=params, drive='drawings', file_id=drawing.d_id)
+            url = gsuite.API_BASE.format(params=params, drive=drive, file_id=drawing.d_id)
 
             try:
                 response, content = self.client.request(url)
