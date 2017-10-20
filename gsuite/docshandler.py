@@ -45,8 +45,12 @@ def get_download_ext(html_response):
     :param html_response:  GSuite API html response
     :return: Extension of downloaded resource (png, pdf, doc, etc)
     """
-    filename = cgi.parse_header(html_response['content-disposition'])[-1]['filename']
-    extension = os.path.splitext(filename)[1]
+    try:
+        filename = cgi.parse_header(html_response['content-disposition'])[-1]['filename']
+    except KeyError:
+        return '.failed'
+    else:
+        extension = os.path.splitext(filename)[1]
     return extension
 
 
@@ -404,15 +408,16 @@ class ImageParser(Parser):
         """
         images = []
         links = self.get_image_links(image_ids=image_ids, file_id=file_id, drive=drive)
-        for url, img_id in links.itervalues():
-            try:
-                response, content = self.client.request(url)
-            except self.client.HttpError:
-                self.logger.debug('Image could not be retrieved:\n\turl={}\n\t img_id={}'.format(url, img_id))
-            else:
-                extension = get_download_ext(response)
-                img = self.Image(content, extension, img_id)
-                images.append(img)
+        if links:
+            for url, img_id in links.itervalues():
+                try:
+                    response, content = self.client.request(url)
+                except self.client.HttpError:
+                    self.logger.debug('Image could not be retrieved:\n\turl={}\n\t img_id={}'.format(url, img_id))
+                else:
+                    extension = get_download_ext(response)
+                    img = self.Image(content, extension, img_id)
+                    images.append(img)
 
         return images
 
@@ -427,6 +432,7 @@ class ImageParser(Parser):
         except self.client.HttpError:
             self.logger.debug(
                 'Renderdata url cannot be resolved:\n\trender_url={}\n\t body={}'.format(render_url, request_body))
+            return {}
         else:
             content = json.loads(content[5:])
             # keep association of image ids with image
@@ -502,7 +508,7 @@ class DrawingsParser(Parser):
         for drawing in drawing_ids:
             # url = DRAW_PATH.format(d_id=drawing_id[0], w=drawing_id[1], h=drawing_id[2])
             params = gsuite.DRAW_PARAMS.format(w=drawing.width, h=drawing.height)
-            url = gsuite.API_BASE.format(params=params, drive=drive, file_id=drawing.d_id)
+            url = gsuite.API_BASE.format(params=params, drive='drawings', file_id=drawing.d_id)
 
             try:
                 response, content = self.client.request(url)
