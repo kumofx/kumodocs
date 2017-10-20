@@ -504,6 +504,7 @@ class DrawingsParser(Parser):
         """
 
         # TODO get_download_ext -> call from client
+        # TODO fix source of drive instead of hard coding
         drawings, drive = [], 'drawings'
         for drawing in drawing_ids:
             # url = DRAW_PATH.format(d_id=drawing_id[0], w=drawing_id[1], h=drawing_id[2])
