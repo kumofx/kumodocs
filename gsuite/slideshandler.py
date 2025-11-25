@@ -3,7 +3,7 @@ import os
 
 from baseclass import Handler, Parser
 # noinspection PyUnresolvedReferences
-from docshandler import ImageParser, CommentsParser, create_obj_list, insert, delete
+from gsuite.docshandler import ImageParser, CommentsParser, create_obj_list, insert, delete
 
 INDEX_OFFSET = 0
 logger = logging.getLogger(__name__)

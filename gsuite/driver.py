@@ -4,8 +4,8 @@ import os
 from collections import namedtuple
 
 import KIOutils
-import gapiclient
 import gsuite
+from gsuite import gapiclient
 from baseclass import Driver
 from gsuite.docshandler import DocsHandler
 from gsuite.formshandler import FormsHandler
@@ -111,7 +111,7 @@ class GSuiteDriver(Driver):
         """ Prompts for start revision with bounds checking"""
         while start < 1 or start > self.choice.max_revs:
             try:
-                start = int(raw_input("Start from revision(max {}): ".format(self.choice.max_revs)))
+                start = int(input("Start from revision(max {}): ".format(self.choice.max_revs)))
                 if start < 1 or start > self.choice.max_revs:
                     raise ValueError
             except ValueError:
@@ -122,7 +122,7 @@ class GSuiteDriver(Driver):
         """ Prompts for end revision with bounds checking"""
         while end < start or end > self.choice.max_revs:
             try:
-                end = int(raw_input("End at revision(max {}): ".format(self.choice.max_revs)))
+                end = int(input("End at revision(max {}): ".format(self.choice.max_revs)))
                 if end == 0 or end > self.choice.max_revs:
                     raise ValueError
             except ValueError:
@@ -165,6 +165,10 @@ class GSuiteDriver(Driver):
             self.logger.error('Could not obtain log. Check file_id, max revisions, and permission for file')
             raise SystemExit('Cannot continue without log')
         else:
+            # Decode bytes to string in Python 3
+            if isinstance(log, bytes):
+                log = log.decode('utf-8')
+
             if log.startswith(gsuite.LOG_START_CHR):
                 trimmed_log = log[len(gsuite.LOG_START_CHR):]
             else:

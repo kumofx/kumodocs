@@ -3,7 +3,7 @@ import itertools
 import json
 import os
 import sys
-from abc import abstractmethod, ABCMeta, abstractproperty
+from abc import abstractmethod, ABCMeta
 # noinspection PyClassHasNoInit
 from collections import namedtuple
 
@@ -16,30 +16,33 @@ def is_parser(item):
     return inspect.isclass(cls) and name.endswith('Parser') and cls is not Parser
 
 
-class Driver(object):
-    __metaclass__ = ABCMeta
+class Driver(object, metaclass=ABCMeta):
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def logger(self):
         """
-        Defines a logger property that must be provided in the derived class 
+        Defines a logger property that must be provided in the derived class
         :return: logger property
         :rtype: Instance of logging.Logger
         """
 
     @logger.setter
+    @abstractmethod
     def logger(self, value):
         """ Defines a basic setter for logger property """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def base_dir(self):  # type: () -> str
         """
-        Defines base directory property for recovered objects, with relative paths considering /kumodocs as the 
-        working directory. 
+        Defines base directory property for recovered objects, with relative paths considering /kumodocs as the
+        working directory.
         :return: base_directory as absolute or relative path
         """
 
     @base_dir.setter
+    @abstractmethod
     def base_dir(self, value):
         """ Defines a basic setter for base_dir property """
 
@@ -106,21 +109,25 @@ class Driver(object):
 
         try:
             with open(outfile, 'wb') as f:
-                f.write(kumo_obj.content)
+                # Ensure content is bytes for binary write mode
+                content = kumo_obj.content
+                if isinstance(content, str):
+                    content = content.encode('utf-8')
+                f.write(content)
         except IOError:
             self.logger.exception('Failed to write {} object'.format(kumo_obj.filename))
 
 
-class Parser(object):
+class Parser(object, metaclass=ABCMeta):
     """ Specific parsers implement parse() and return a list of KumoObj """
-    __metaclass__ = ABCMeta
 
     def __init__(self, client, delimiter='|'):
         self.KumoObj = Handler.KumoObj
         self.client = client
         self.delimiter = delimiter
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def logger(self):
         """ Local logger object"""
 
@@ -135,7 +142,7 @@ class Parser(object):
         """
 
 
-class Handler(object):
+class Handler(object, metaclass=ABCMeta):
     """  Base class for service handlers to inherit.  Any Handler that inherits from this base class should add the
     following to init:
 
@@ -148,8 +155,6 @@ class Handler(object):
 
     This will gather any classes defined in the module as xxxxParser as well as any imports
     that match this pattern """
-
-    __metaclass__ = ABCMeta
 
     DELIMITER = '|'
 
@@ -173,18 +178,20 @@ class Handler(object):
             self.iter_count = 1
             return self
 
-        def next(self):
+        def __next__(self):
             if self.iter_count:
                 self.iter_count -= 1
                 return self
             else:
                 raise StopIteration
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def logger(self):
         """ Local logger """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def parsers(self):  # type:  () -> list
         """ List of parser instances retrieved during __init__ """
 
@@ -234,7 +241,7 @@ class Handler(object):
         def parse(self, log, flat_log, choice, **kwargs):
             if flat_log:
                 filename = 'flat_log.txt'
-                content = '\n'.join(str(line) for line in flat_log)
+                content = '\n'.join(str(line) for line in flat_log).encode('utf-8')
                 return [self.KumoObj(filename=filename, content=content)]
             else:
                 return []
@@ -248,7 +255,7 @@ class Handler(object):
 
         def parse(self, log, flat_log, choice, **kwargs):
             filename = 'revision-log.txt'
-            content = Handler.stringify(log)
+            content = Handler.stringify(log).encode('utf-8')
             return [self.KumoObj(filename=filename, content=content)]
 
     # common methods

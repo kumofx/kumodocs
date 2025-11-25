@@ -2,7 +2,7 @@ import cgi
 import json
 import logging
 import os
-import urllib
+import urllib.parse
 from collections import OrderedDict, namedtuple
 
 import gsuite
@@ -252,7 +252,8 @@ class DocsHandler(Handler):
     def rename_keys(self, log_dict):
         """rename minified variables using mappings in `mappings.py`. preserves order"""
         log_dict = OrderedDict(log_dict)
-        for key in log_dict.keys():
+        # Create a list of keys to avoid RuntimeError in Python 3
+        for key in list(log_dict.keys()):
             try:
                 new_key = mappings.remap(key)
                 log_dict[new_key] = log_dict.pop(key)
@@ -409,7 +410,7 @@ class ImageParser(Parser):
         images = []
         links = self.get_image_links(image_ids=image_ids, file_id=file_id, drive=drive)
         if links:
-            for url, img_id in links.itervalues():
+            for url, img_id in links.values():
                 try:
                     response, content = self.client.request(url)
                 except self.client.HttpError:
@@ -434,6 +435,9 @@ class ImageParser(Parser):
                 'Renderdata url cannot be resolved:\n\trender_url={}\n\t body={}'.format(render_url, request_body))
             return {}
         else:
+            # Decode bytes to string in Python 3
+            if isinstance(content, bytes):
+                content = content.decode('utf-8')
             content = json.loads(content[5:])
             # keep association of image ids with image
             for i, img_id in enumerate(image_ids):
@@ -452,7 +456,7 @@ class ImageParser(Parser):
             data[key] = ["image", {"cosmoId": img_id.encode(), "container": file_id}]
 
         # removes '+' character and changes single to double quotes to prevent bad request
-        request_body = urllib.urlencode({"renderOps": data}).replace('+', '').replace('%27', '%22')
+        request_body = urllib.parse.urlencode({"renderOps": data}).replace('+', '').replace('%27', '%22')
         my_headers = {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'}
 
         render_url = self.form_render_url(file_id=file_id, drive=drive)

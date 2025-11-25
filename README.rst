@@ -23,10 +23,10 @@ Installation
 Requirements include:
 
 - OAuth2 client ID and client secret from https://console.developers.google.com/apis/credentials
-- Python 2.7.x
-- google-api-python-client==1.6.2 
-- click==6.7
-- nose==1.3.7 (optional, for unit tests)
+- Python 3.8 or higher
+- google-api-python-client>=2.0.0
+- click>=8.0.0
+- pytest>=7.0.0 (optional, for unit tests)
 - virtualenv (optional) 
 
 
@@ -52,16 +52,16 @@ To find your project's client ID and client secret, do the following:
 2. Python Program
 -----------------
 
-The recommended method of installation is to create a virtual environment using the virtualenv python package ::
+The recommended method of installation is to create a virtual environment using Python's built-in venv ::
 
 $ git clone https://github.com/kumofx/kumodocs
 $ cd kumodocs
-$ virtualenv kumodocs
+$ python3 -m venv kumodocs
 
 Currently, kumodocs requires tkinter.  For Linux, this requires installing Tcl/Tk; for distributions with apt, this
 will install the necessary files: ::
 
-$ sudo apt install python-tk
+$ sudo apt install python3-tk
 
 Activate the virtual environment by using source activate (linux) or running activate.bat (windows) ::
 

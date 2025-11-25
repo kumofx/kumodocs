@@ -1,5 +1,5 @@
-import ConfigParser
-import Tkinter as Tk
+import configparser
+import tkinter as Tk
 import errno
 import hashlib
 import logging
@@ -8,7 +8,7 @@ import os
 import re
 import shutil
 import tempfile
-import tkFileDialog
+import tkinter.filedialog as tkFileDialog
 from contextlib import contextmanager
 
 REL_CONFIG_PATH = ['config', 'config.cfg']
@@ -50,7 +50,7 @@ def strip_invalid_characters(filename):
     :param filename: File name obtained from cloud service
     :return: 
     """
-    new_filename_partial = re.sub('[^\w\-_. ]', '_', filename)
+    new_filename_partial = re.sub(r'[^\w\-_. ]', '_', filename)
     new_filename = re.sub('__+', '_', new_filename_partial)
     log.debug('Stripped invalid characters from filename: {} -> {}'.format(filename.encode('utf-8'), new_filename))
     return new_filename
@@ -95,7 +95,7 @@ def ensure_path(path):
     except (OSError, AttributeError) as exception:
         # if the directory exists or path is empty, ignore error
         if exception.errno != errno.EEXIST and exception.errno != errno.ENOENT:
-            print exception.errno
+            print(exception.errno)
             log.exception('I/O error creating directory at: {}'.format(path))
             raise
 
@@ -116,7 +116,7 @@ def get_abs_config_path():
     Creates absolute paths for config files and reads them. 
     :return: Tuple (token_path, client_secrets_path) required for oauth2. 
     """
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     file_dir = dir_path(__file__)
     config_fp = os.path.realpath(os.path.join(file_dir, *REL_CONFIG_PATH))
     config.read(config_fp)

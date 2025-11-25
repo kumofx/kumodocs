@@ -66,4 +66,6 @@ target/
 env/
 venv/
 ENV/
+test_env/
+*_env/
 

@@ -1,4 +1,4 @@
-import StringIO
+import io
 import fnmatch
 import hashlib
 import logging
@@ -83,7 +83,7 @@ class ChromeDriver(object):
                 attempts -= 1
                 logger.error('Error obtaining chromedriver. Retrying ({})'.format(attempts))
             else:
-                zipf = zipfile.ZipFile(StringIO.StringIO(r.content))
+                zipf = zipfile.ZipFile(io.BytesIO(r.content))
                 zipf.extractall(path=path)
                 self.downloaded = True
                 logger.info('Chromedriver downloaded')
@@ -123,7 +123,7 @@ class ChromeDriver(object):
         except WebDriverException:
             logger.error('Unable to locate chromedriver')
             time.sleep(0.1)
-            download = raw_input('\nNo chrome driver found.  Download? (y/n): ')
+            download = input('\nNo chrome driver found.  Download? (y/n): ')
             if download.lower().startswith('y'):
                 self.download_chromedriver()
                 try:
